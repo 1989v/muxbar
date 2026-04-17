@@ -103,11 +103,23 @@ public protocol SessionProvider: Sendable {
     func listSessions() async throws -> [TmuxSession]
     func kill(sessionName: String) async throws
     func createSession(name: String, command: String?) async throws
+    func capturePane(target: String, lines: Int) async throws -> String
     var events: AsyncStream<SessionProviderEvent> { get }
+    var paneOutput: AsyncStream<PaneOutputChunk> { get }
 }
 
 public enum SessionProviderEvent: Sendable, Equatable {
     case sessionsChanged
     case connectionLost
     case unknown
+}
+
+/// %output 이벤트의 Core 레이어 표현.
+public struct PaneOutputChunk: Sendable, Equatable {
+    public let paneId: String
+    public let data: Data
+    public init(paneId: String, data: Data) {
+        self.paneId = paneId
+        self.data = data
+    }
 }
