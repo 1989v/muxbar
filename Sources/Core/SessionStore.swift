@@ -62,20 +62,25 @@ public final class SessionStore: ObservableObject {
     }
 
     private func initialLoad(from provider: any SessionProvider) async {
+        self.connectionState = .connecting(attempt: 1)
+        logger.info("initialLoad 시작 (list-sessions 요청)")
         do {
-            self.connectionState = .connecting(attempt: 1)
             let fetched = try await provider.listSessions()
             self.sessions = fetched
             self.connectionState = .connected
+            logger.info("initialLoad 완료 — \(fetched.count) sessions (\(fetched.map(\.id).joined(separator: ", ")))")
         } catch {
             self.apply(error: "initial load failed: \(error.localizedDescription)")
             self.connectionState = .failed(reason: error.localizedDescription)
+            logger.error("initialLoad 실패: \(error.localizedDescription)")
         }
     }
 
     private func refresh(from provider: any SessionProvider) async {
         do {
-            self.sessions = try await provider.listSessions()
+            let fetched = try await provider.listSessions()
+            self.sessions = fetched
+            logger.info("refresh — \(fetched.count) sessions")
         } catch {
             self.apply(error: "refresh failed: \(error.localizedDescription)")
         }

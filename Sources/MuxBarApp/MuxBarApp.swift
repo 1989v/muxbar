@@ -16,8 +16,12 @@ struct MuxBarApp: App {
     var body: some Scene {
         MenuBarExtra {
             menuContent
-                .task {
-                    await appState.bootstrap()
+                .onAppear {
+                    // 메뉴가 처음 열릴 때 bootstrap 보장 (이미 됐으면 idempotent skip).
+                    // .task 는 메뉴 닫힘 시 cancel 되어 listSessions 가 중간에 끊길 수 있어 detached Task 사용.
+                    Task { @MainActor in
+                        await appState.ensureBootstrapped()
+                    }
                 }
         } label: {
             Image(systemName: iconName)

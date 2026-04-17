@@ -19,10 +19,22 @@ public final class AppState: ObservableObject {
     public let notificationService: NotificationService
     public let loginItemService: LoginItemService
     public private(set) var controlClient: ControlClient?
+    private var bootstrapTask: Task<Void, Never>?
 
     @Published public var previewSession: TmuxSession?
 
     private let logger = MuxLogging.logger("MuxBarApp.AppState")
+
+    /// Menu onAppear 에서 호출. 첫 호출엔 bootstrap 수행, 이후는 no-op.
+    /// .task 가 아닌 unstructured Task 로 돌아 메뉴 닫혀도 취소 안 됨.
+    public func ensureBootstrapped() async {
+        if bootstrapTask == nil {
+            bootstrapTask = Task { @MainActor [weak self] in
+                await self?.bootstrap()
+            }
+        }
+        await bootstrapTask?.value
+    }
 
     public init() {
         self.previewController = PreviewController()
