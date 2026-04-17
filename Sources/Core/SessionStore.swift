@@ -14,7 +14,16 @@ public final class SessionStore: ObservableObject {
     public init() {}
 
     public var userVisibleSessions: [TmuxSession] {
-        sessions.filter { !$0.isInternal }
+        sessions
+            .filter { !$0.isInternal }
+            .sorted { lhs, rhs in
+                // 1순위: attached 세션 먼저
+                if lhs.isAttached != rhs.isAttached {
+                    return lhs.isAttached
+                }
+                // 2순위: 최근 생성된 세션 먼저 (createdAt DESC)
+                return lhs.createdAt > rhs.createdAt
+            }
     }
 
     public var awakeSessionExists: Bool {
