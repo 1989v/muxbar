@@ -52,7 +52,8 @@ extension ControlClient: SessionProvider {
     public func listCaffeinateSessions() async throws -> [String] {
         // 모든 세션의 모든 pane 의 현재 커맨드를 한 번에 조회.
         // 포맷: "<session_name>\t<pane_current_command>"
-        let raw = try await sendRaw("list-panes -a -F \"#{session_name}\\t#{pane_current_command}\"")
+        // literal \t 가 아닌 실제 탭 문자를 format 에 포함해야 tmux 가 필드 구분자로 출력함.
+        let raw = try await sendRaw("list-panes -a -F \"#{session_name}\t#{pane_current_command}\"")
         let sessions = raw
             .split(separator: "\n", omittingEmptySubsequences: true)
             .compactMap { line -> String? in

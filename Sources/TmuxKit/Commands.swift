@@ -12,12 +12,13 @@ public enum TmuxCommand: Sendable, Equatable {
     public var cliString: String {
         switch self {
         case .listSessions:
-            let fields = #"#{session_name}\t#{session_attached}\t#{session_windows}\t#{session_created}\t#{session_activity}\t#{session_path}"#
-            return #"list-sessions -F "\#(fields)""#
+            // tmux 는 format 문자열의 literal \t 를 변환하지 않으므로 실제 탭 문자(U+0009) 사용.
+            let fields = "#{session_name}\t#{session_attached}\t#{session_windows}\t#{session_created}\t#{session_activity}\t#{session_path}"
+            return "list-sessions -F \"\(fields)\""
 
         case .listWindows(let session):
-            let fields = #"#{window_id}\t#{window_index}\t#{window_name}\t#{window_panes}\t#{window_active}"#
-            return #"list-windows -t \#(quote(session)) -F "\#(fields)""#
+            let fields = "#{window_id}\t#{window_index}\t#{window_name}\t#{window_panes}\t#{window_active}"
+            return "list-windows -t \(quote(session)) -F \"\(fields)\""
 
         case .killSession(let name):
             return #"kill-session -t \#(quote(name))"#

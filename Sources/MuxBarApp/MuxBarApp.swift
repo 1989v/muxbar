@@ -22,16 +22,12 @@ struct MuxBarApp: App {
                     }
                 }
         } label: {
-            Image(systemName: iconName)
+            MenuBarIcon(
+                sessionStore: appState.sessionStore,
+                awakeStore: appState.awakeStore
+            )
         }
         .menuBarExtraStyle(.window)
-    }
-
-    private var iconName: String {
-        if appState.awakeStore.isAwake(in: appState.sessionStore) {
-            return "terminal.fill"
-        }
-        return "terminal"
     }
 
     @ViewBuilder
