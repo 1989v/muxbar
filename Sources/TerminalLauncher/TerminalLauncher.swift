@@ -1,2 +1,1 @@
-// Placeholder — filled in Task 4
-import Foundation
+// Umbrella file — public API re-exported from TerminalApp.swift and TerminalAdapter.swift
