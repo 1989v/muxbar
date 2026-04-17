@@ -36,4 +36,16 @@ final class ModelEqualityTests: XCTestCase {
         )
         XCTAssertFalse(userSession.isInternal)
     }
+
+    func test_tmuxWindow_equality() {
+        let a = TmuxWindow(id: "@1", sessionId: "dev", index: 0, name: "edit", paneCount: 2, isActive: true)
+        let b = TmuxWindow(id: "@1", sessionId: "dev", index: 0, name: "edit", paneCount: 2, isActive: true)
+        XCTAssertEqual(a, b)
+    }
+
+    func test_tmuxPane_equality() {
+        let a = TmuxPane(id: "%5", windowId: "@1", command: "nvim", pid: 1234, isActive: true)
+        let b = TmuxPane(id: "%5", windowId: "@1", command: "nvim", pid: 1234, isActive: true)
+        XCTAssertEqual(a, b)
+    }
 }
