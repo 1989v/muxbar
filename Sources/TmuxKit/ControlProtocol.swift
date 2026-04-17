@@ -86,8 +86,64 @@ public final class ControlProtocol {
         return (t, c, f)
     }
 
-    // 다음 Task 에서 구현
     fileprivate func parseAsyncEvent(_ line: String) -> [ControlEvent] {
-        [.unknown(line: line)]
+        guard line.hasPrefix("%") else { return [.unknown(line: line)] }
+
+        // 공백으로 토큰 분리
+        let firstSpace = line.firstIndex(of: " ")
+        let keyword = firstSpace.map { String(line[line.startIndex..<$0]) } ?? line
+        let rest: String = firstSpace.map { String(line[line.index(after: $0)...]) } ?? ""
+
+        switch keyword {
+        case "%output":
+            // "%5 hello\\012world"
+            let parts = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return [.unknown(line: line)] }
+            return [.paneOutput(paneId: parts[0], data: OctalUnescape.decode(parts[1]))]
+
+        case "%sessions-changed":
+            return [.sessionsChanged]
+
+        case "%session-changed":
+            let parts = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return [.unknown(line: line)] }
+            return [.sessionChanged(sessionId: parts[0], name: parts[1])]
+
+        case "%session-renamed":
+            let parts = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return [.unknown(line: line)] }
+            return [.sessionRenamed(sessionId: parts[0], name: parts[1])]
+
+        case "%window-add":
+            return [.windowAdd(windowId: rest)]
+
+        case "%window-close":
+            return [.windowClose(windowId: rest)]
+
+        case "%window-renamed":
+            let parts = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return [.unknown(line: line)] }
+            return [.windowRenamed(windowId: parts[0], name: parts[1])]
+
+        case "%window-pane-changed":
+            let parts = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return [.unknown(line: line)] }
+            return [.windowPaneChanged(windowId: parts[0], paneId: parts[1])]
+
+        case "%pane-mode-changed":
+            return [.paneModeChanged(paneId: rest)]
+
+        case "%pause":
+            return [.pause(paneId: rest)]
+
+        case "%continue":
+            return [.continueFlow(paneId: rest)]
+
+        case "%exit":
+            return [.exit]
+
+        default:
+            return [.unknown(line: line)]
+        }
     }
 }
