@@ -1,7 +1,7 @@
 import Foundation
 
 public struct Template: Codable, Identifiable, Sendable, Equatable {
-    public let id: UUID
+    public var id: UUID
     public var name: String
     public var description: String
     public var sessionNameHint: String
@@ -13,6 +13,20 @@ public struct Template: Codable, Identifiable, Sendable, Equatable {
         self.description = description
         self.sessionNameHint = sessionNameHint
         self.windows = windows
+    }
+
+    // YAML 파일에 id 생략 가능 — 없으면 생성
+    private enum CodingKeys: String, CodingKey {
+        case id, name, description, sessionNameHint, windows
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? c.decode(UUID.self, forKey: .id)) ?? UUID()
+        self.name = try c.decode(String.self, forKey: .name)
+        self.description = try c.decodeIfPresent(String.self, forKey: .description) ?? ""
+        self.sessionNameHint = try c.decodeIfPresent(String.self, forKey: .sessionNameHint) ?? name.lowercased()
+        self.windows = try c.decode([TemplateWindow].self, forKey: .windows)
     }
 }
 

@@ -17,8 +17,6 @@ struct MuxBarApp: App {
         MenuBarExtra {
             menuContent
                 .onAppear {
-                    // 메뉴가 처음 열릴 때 bootstrap 보장 (이미 됐으면 idempotent skip).
-                    // .task 는 메뉴 닫힘 시 cancel 되어 listSessions 가 중간에 끊길 수 있어 detached Task 사용.
                     Task { @MainActor in
                         await appState.ensureBootstrapped()
                     }
@@ -41,6 +39,8 @@ struct MuxBarApp: App {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
+
+            // 1. 세션 리스트 (메인, 스크롤 가능)
             SessionListView(
                 store: appState.sessionStore,
                 onAttach: { appState.attach($0) },
@@ -56,18 +56,31 @@ struct MuxBarApp: App {
             ) {
                 SessionPreviewView(controller: appState.previewController)
             }
-            TemplatePickerView { template in
-                appState.runTemplate(template)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+
             Divider()
+
+            // 2. Keep Awake 토글
             KeepAwakeMenuItem(
                 sessionStore: appState.sessionStore,
                 awakeStore: appState.awakeStore,
                 onToggle: { appState.toggleAwake() }
             )
+
             Divider()
+
+            // 3. New Session (템플릿 서브메뉴)
+            NewSessionMenu(
+                store: appState.templateStore,
+                onRun: { appState.runTemplate($0) },
+                onOpenFolder: { appState.openTemplatesFolder() },
+                onReload: { appState.reloadTemplates() }
+            )
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+
+            Divider()
+
+            // 4. 시작 시 자동 실행
             Toggle(isOn: Binding(
                 get: { appState.loginItemService.isEnabled },
                 set: { appState.loginItemService.set($0) }
@@ -77,7 +90,10 @@ struct MuxBarApp: App {
             .toggleStyle(.switch)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
+
             Divider()
+
+            // 5. Quit
             Button("Quit muxbar") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
                 .padding(.horizontal, 8)

@@ -15,6 +15,7 @@ public final class AppState: ObservableObject {
     public let previewController: PreviewController
     public let terminalAdapter: TerminalAdapter?
     public let templateRunner: TemplateRunner
+    public let templateStore: TemplateStore
     public let hotKeyCenter: HotKeyCenter
     public let notificationService: NotificationService
     public let loginItemService: LoginItemService
@@ -41,6 +42,7 @@ public final class AppState: ObservableObject {
         self.sessionStore = SessionStore()
         self.awakeStore = AwakeStore()
         self.templateRunner = TemplateRunner()
+        self.templateStore = TemplateStore()
         self.hotKeyCenter = HotKeyCenter()
         self.notificationService = NotificationService()
         self.loginItemService = LoginItemService()
@@ -53,6 +55,7 @@ public final class AppState: ObservableObject {
     }
 
     public func bootstrap() async {
+        templateStore.reload()
         do {
             let client = try ControlClient()
             self.controlClient = client
@@ -130,6 +133,14 @@ public final class AppState: ObservableObject {
                 sessionStore.apply(error: "템플릿 실행 실패: \(error.localizedDescription)")
             }
         }
+    }
+
+    public func openTemplatesFolder() {
+        NSWorkspace.shared.open(templateStore.templatesDirectoryURL)
+    }
+
+    public func reloadTemplates() {
+        templateStore.reload()
     }
 
     public func registerHotkeys() {
