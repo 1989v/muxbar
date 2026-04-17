@@ -9,9 +9,12 @@ public final class LoginItemService: ObservableObject {
     private let logger = MuxLogging.logger("Features.LoginItem")
 
     /// SMAppService.mainApp 은 번들된 .app 에서만 유효. unbundled 실행 시 호출 회피.
-    private static var isBundled: Bool {
+    public static var isBundled: Bool {
         Bundle.main.bundleIdentifier != nil
     }
+
+    /// UI 에서 "시작 시 자동 실행" 토글을 노출할지 결정.
+    public var isAvailable: Bool { Self.isBundled }
 
     public init() {
         self.isEnabled = Self.isBundled ? (SMAppService.mainApp.status == .enabled) : false

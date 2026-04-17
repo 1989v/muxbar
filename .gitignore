@@ -5,3 +5,6 @@
 Package.resolved
 .vscode/
 DerivedData/
+# build.sh 산출물
+/muxbar.app/
+/dist/

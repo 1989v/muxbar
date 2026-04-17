@@ -74,18 +74,19 @@ struct MuxBarApp: App {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
 
-            Divider()
-
-            // 4. 시작 시 자동 실행
-            Toggle(isOn: Binding(
-                get: { appState.loginItemService.isEnabled },
-                set: { appState.loginItemService.set($0) }
-            )) {
-                Text("시작 시 자동 실행")
+            // 4. 시작 시 자동 실행 — .app 번들 실행 시에만 노출
+            if appState.loginItemService.isAvailable {
+                Divider()
+                Toggle(isOn: Binding(
+                    get: { appState.loginItemService.isEnabled },
+                    set: { appState.loginItemService.set($0) }
+                )) {
+                    Text("시작 시 자동 실행")
+                }
+                .toggleStyle(.switch)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
-            .toggleStyle(.switch)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
 
             Divider()
 

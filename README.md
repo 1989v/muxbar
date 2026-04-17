@@ -21,13 +21,38 @@
 
 ## 설치
 
-### Homebrew (권장)
+### Homebrew (권장, 배포 후)
 
 ```bash
 brew install --cask 1989v/tap/muxbar
 ```
 
-### 수동 다운로드
+### 소스에서 직접 빌드 (Xcode 불필요)
+
+CommandLineTools + Swift 5.9+ 만 있으면 .app 번들 생성 가능.
+
+```bash
+git clone https://github.com/1989v/muxbar.git
+cd muxbar
+
+# Release 빌드 + .app 번들 생성
+./build.sh
+
+# 곧바로 실행
+./build.sh open
+
+# /Applications 로 복사 (Login Item / 알림 기능 위해 권장)
+./build.sh install
+open /Applications/muxbar.app
+```
+
+스크립트가 하는 일:
+1. `swift build -c release`
+2. `muxbar.app/Contents/{MacOS, Info.plist}` 구조 생성
+3. Ad-hoc codesign (`codesign --sign -`) 로 Gatekeeper 통과
+4. quarantine 속성 제거
+
+### 수동 다운로드 (배포 후)
 
 1. [Releases](https://github.com/1989v/muxbar/releases) 에서 `.dmg` 다운로드
 2. muxbar.app 을 Applications 로 드래그
@@ -36,18 +61,24 @@ brew install --cask 1989v/tap/muxbar
 ## 개발
 
 ```bash
+# 디버그 빌드 실행 (일부 기능 제한: 알림/LoginItem 은 unbundled 에서 비활성)
 swift build
 swift run muxbar
-
-# release
-swift build -c release
-./.build/release/muxbar
 ```
 
-테스트 (Xcode 필요):
+테스트 (Xcode 필요 — XCTest 프레임워크):
 ```bash
 swift test
 ```
+
+## 실행 모드별 기능 차이
+
+| 기능 | `swift run` (unbundled) | `./build.sh` 로 생성한 .app |
+|------|---|---|
+| 세션 리스트 / Attach / Kill / Preview | ✅ | ✅ |
+| Keep Awake / HotKeys / Templates | ✅ | ✅ |
+| Login Item (시작 시 자동 실행) | ❌ (메뉴 숨김) | ✅ |
+| UserNotification (세션 종료 알림) | ❌ | ✅ |
 
 ## 문서
 
