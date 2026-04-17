@@ -18,9 +18,10 @@ public enum UserTemplatesLoader {
             try? fm.createDirectory(at: directory, withIntermediateDirectories: true)
             let sample = directory.appendingPathComponent("_example.yaml")
             let yaml = """
-            # muxbar 사용자 템플릿 예시 — 이 파일을 복사해 본인 워크플로우에 맞게 편집하세요
+            # muxbar custom template example — copy this file and edit to fit your workflow.
+            # Files starting with underscore (like this one) are ignored by the loader.
             name: MyDev
-            description: 개인 개발 환경 예시
+            description: Personal dev environment example
             sessionNameHint: mydev
             windows:
               - name: edit

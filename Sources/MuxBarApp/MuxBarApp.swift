@@ -10,7 +10,7 @@ struct MuxBarApp: App {
 
     init() {
         MuxLogging.bootstrap()
-        MuxLogging.logger("app").info("muxbar 기동")
+        MuxLogging.logger("app").info("muxbar launched")
     }
 
     var body: some Scene {
@@ -81,7 +81,7 @@ struct MuxBarApp: App {
                     get: { appState.loginItemService.isEnabled },
                     set: { appState.loginItemService.set($0) }
                 )) {
-                    Text("시작 시 자동 실행")
+                    Text("Launch at Login")
                 }
                 .toggleStyle(.switch)
                 .padding(.horizontal, 8)

@@ -1,90 +1,127 @@
 # muxbar
 
-> tmux session manager + caffeinate toggle — macOS menu bar app.
+> A native macOS menu bar app for tmux session management + caffeinate toggle.
 
-## 기능
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
+[![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
-- 메뉴바 아이콘 → tmux 세션 리스트
-- 세션 **Attach** (Terminal.app / iTerm2 / Warp / Alacritty / kitty)
-- 세션 **Kill**
-- 세션 **Live Preview** (SwiftTerm 기반 ANSI 렌더)
-- **Keep Awake** 토글 — `caffeinate -dims` 을 `_muxbar-awake` tmux 세션으로 실행
-- **세션 템플릿** 5종 (Dev, WebDev, Monitoring, SSH, Docker)
-- **전역 단축키** (⌘⇧A: Keep Awake, ⌘⇧1~9: 즐겨찾기 attach)
-- 시작 시 자동 실행 옵션 (Login Item)
-- 세션 종료 시 알림
+## Features
 
-## 사전 요구사항
+- **Session list** — All tmux sessions at a glance, sorted by attached first and creation date
+- **Attach** — Open the selected session in Terminal.app / iTerm2 / Warp / Alacritty / kitty
+- **Kill** — Drop a session from the menu
+- **Live Preview** — Hover a session to see recent output (ANSI-rendered via SwiftTerm)
+- **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
+- **Templates** — Built-in and user-defined session layouts (YAML). New Session → pick a template.
+- **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
+- **Launch at Login** — Registers as a macOS Login Item (when installed as a bundled `.app`).
 
-- macOS 13 (Ventura) 이상
+## Menu bar icon
+
+- 0 sessions: plain coffee cup `☕`
+- Active sessions: cup + session count (`☕ 5`)
+- Keep Awake active: steaming cup, orange tint `☕💨`
+
+## Requirements
+
+- macOS 13 (Ventura) or later
 - `tmux` (`brew install tmux`)
 
-## 설치
+## Installation
 
-### Homebrew (권장, 배포 후)
+### Homebrew (planned)
 
 ```bash
 brew install --cask 1989v/tap/muxbar
 ```
 
-### 소스에서 직접 빌드 (Xcode 불필요)
+### Build from source (Xcode not required)
 
-CommandLineTools + Swift 5.9+ 만 있으면 .app 번들 생성 가능.
+You only need the Command Line Tools + Swift 5.9+.
 
 ```bash
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
 
-# Release 빌드 + .app 번들 생성
-./build.sh
-
-# 곧바로 실행
-./build.sh open
-
-# /Applications 로 복사 (Login Item / 알림 기능 위해 권장)
-./build.sh install
-open /Applications/muxbar.app
+./build.sh           # Release build + .app bundle
+./build.sh open      # Build + open
+./build.sh install   # Build + copy to /Applications
 ```
 
-스크립트가 하는 일:
+`build.sh` does:
 1. `swift build -c release`
-2. `muxbar.app/Contents/{MacOS, Info.plist}` 구조 생성
-3. Ad-hoc codesign (`codesign --sign -`) 로 Gatekeeper 통과
-4. quarantine 속성 제거
+2. Creates `muxbar.app/Contents/{MacOS,Info.plist}`
+3. Ad-hoc codesigns with `codesign --sign -`
+4. Strips quarantine attribute
 
-### 수동 다운로드 (배포 후)
+### Manual download (after release)
 
-1. [Releases](https://github.com/1989v/muxbar/releases) 에서 `.dmg` 다운로드
-2. muxbar.app 을 Applications 로 드래그
-3. **첫 실행**: 우클릭 → 열기 (ad-hoc 서명 우회)
+1. Download the `.dmg` from [Releases](https://github.com/1989v/muxbar/releases)
+2. Drag `muxbar.app` into Applications
+3. First launch: **right-click → Open** (needed because the app uses ad-hoc signing)
 
-## 개발
+## Development
+
+Run from sources (some features are disabled in unbundled mode — see table below):
 
 ```bash
-# 디버그 빌드 실행 (일부 기능 제한: 알림/LoginItem 은 unbundled 에서 비활성)
 swift build
 swift run muxbar
 ```
 
-테스트 (Xcode 필요 — XCTest 프레임워크):
+Run the test suite (requires Xcode for XCTest):
+
 ```bash
 swift test
 ```
 
-## 실행 모드별 기능 차이
+## Feature availability by execution mode
 
-| 기능 | `swift run` (unbundled) | `./build.sh` 로 생성한 .app |
-|------|---|---|
-| 세션 리스트 / Attach / Kill / Preview | ✅ | ✅ |
-| Keep Awake / HotKeys / Templates | ✅ | ✅ |
-| Login Item (시작 시 자동 실행) | ❌ (메뉴 숨김) | ✅ |
-| UserNotification (세션 종료 알림) | ❌ | ✅ |
+| Feature | `swift run` (unbundled) | `.app` bundle |
+|---|---|---|
+| Session list / Attach / Kill / Preview | ✅ | ✅ |
+| Keep Awake, Templates, Hotkeys | ✅ | ✅ |
+| Launch at Login (Login Item) | ❌ (menu hidden) | ✅ |
+| User notifications | ❌ | ✅ |
 
-## 문서
+The menu hides "Launch at Login" automatically when running unbundled.
 
-- [v0.1 Design](docs/specs/2026-04-17-v0.1-design.md)
-- [Plans](docs/README.md)
+## Keyboard shortcuts
 
-## 라이선스
+| Shortcut | Action |
+|---|---|
+| `⌘⇧A` | Toggle Keep Awake |
+| `⌘⇧1` ~ `⌘⇧9` | Attach the N-th visible session |
 
-MIT © 2026 kgd
+## Custom templates
+
+Put YAML files under `~/Library/Application Support/muxbar/Templates/`:
+
+```yaml
+name: MyDev
+description: My dev setup
+sessionNameHint: mydev
+windows:
+  - name: edit
+    command: nvim .
+    cwd: ~
+  - name: run
+    command: npm run dev
+  - name: logs
+    command: tail -f logs/app.log
+```
+
+- Files starting with `_` are ignored (so `_example.yaml` stays as a reference)
+- Reload via menu: **New Session → Reload Templates**
+- Open the folder: **New Session → Edit Templates…**
+
+## Design & documentation
+
+- [v0.1 Design spec](docs/specs/2026-04-17-v0.1-design.md)
+- [Implementation plans](docs/README.md)
+- [Architecture decisions (ADRs)](docs/adr)
+
+## License
+
+[MIT](LICENSE) © 2026 kgd

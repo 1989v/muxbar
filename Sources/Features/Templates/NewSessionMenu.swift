@@ -21,7 +21,7 @@ public struct NewSessionMenu: View {
 
     public var body: some View {
         Menu {
-            Section("빌트인") {
+            Section("Built-in") {
                 ForEach(store.builtInTemplates) { template in
                     Button {
                         onRun(template)
@@ -32,7 +32,7 @@ public struct NewSessionMenu: View {
             }
 
             if !store.userTemplates.isEmpty {
-                Section("사용자") {
+                Section("Custom") {
                     ForEach(store.userTemplates) { template in
                         Button {
                             onRun(template)

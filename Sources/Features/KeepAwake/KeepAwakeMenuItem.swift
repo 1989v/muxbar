@@ -28,13 +28,13 @@ public struct KeepAwakeMenuItem: View {
                 }
             }
             if case .external = source, !externalSessionList.isEmpty {
-                Text("외부: \(externalSessionList)")
+                Text("external: \(externalSessionList)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             } else if case .both = source {
-                Text("외부: \(externalSessionList)")
+                Text("external: \(externalSessionList)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

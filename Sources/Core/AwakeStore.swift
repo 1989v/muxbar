@@ -45,8 +45,8 @@ public final class AwakeStore: ObservableObject {
             switch self {
             case .none: return "OFF"
             case .muxbar: return "ON"
-            case .external: return "ON (외부)"
-            case .both: return "ON (muxbar+외부)"
+            case .external: return "ON (external)"
+            case .both: return "ON (muxbar + external)"
             }
         }
     }

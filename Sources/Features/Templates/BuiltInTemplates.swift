@@ -6,7 +6,7 @@ public enum BuiltInTemplates {
 
     public static let dev = Template(
         name: "Dev",
-        description: "에디터 + 빌드 + 로그",
+        description: "Editor + run + logs",
         sessionNameHint: "dev",
         windows: [
             TemplateWindow(name: "edit"),
@@ -17,7 +17,7 @@ public enum BuiltInTemplates {
 
     public static let webDev = Template(
         name: "WebDev",
-        description: "Next/Vite dev server + 로그",
+        description: "Next/Vite dev server + logs",
         sessionNameHint: "web",
         windows: [
             TemplateWindow(name: "edit"),
@@ -28,7 +28,7 @@ public enum BuiltInTemplates {
 
     public static let monitoring = Template(
         name: "Monitoring",
-        description: "htop + tail",
+        description: "htop + system log tail",
         sessionNameHint: "mon",
         windows: [
             TemplateWindow(name: "htop", command: "htop"),
@@ -38,7 +38,7 @@ public enum BuiltInTemplates {
 
     public static let ssh = Template(
         name: "SSH",
-        description: "원격 접속 기본",
+        description: "Remote shell starter",
         sessionNameHint: "ssh",
         windows: [TemplateWindow(name: "remote")]
     )
