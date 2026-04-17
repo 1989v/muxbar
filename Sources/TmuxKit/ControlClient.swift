@@ -148,8 +148,12 @@ public actor ControlClient {
 
     private func handleEvent(_ event: ControlEvent) {
         switch event {
-        case .commandBegin(_, let cmdId, _):
-            if !awaitingBegin.isEmpty {
+        case .commandBegin(_, let cmdId, let flags):
+            // tmux control mode 는 클라이언트 초기 핸드셰이크로 내부용 command 를 먼저 실행함
+            // (flags=0, 응답 empty). 이건 사용자 명령이 아니니 FIFO 에 바인딩하면 안 됨.
+            // flags bit 1 (값 1) 이 세팅된 것만 "이 클라이언트가 보낸 명령" 의 응답.
+            let isClientCommand = (flags & 1) != 0
+            if isClientCommand, !awaitingBegin.isEmpty {
                 let cont = awaitingBegin.removeFirst()
                 pendingCommands[cmdId] = cont
             }
@@ -235,6 +239,8 @@ public actor ControlClient {
 
     public func listSessions() async throws -> [TmuxSession] {
         let body = try await send(.listSessions)
+        let preview = body.prefix(500).replacingOccurrences(of: "\t", with: "[TAB]").replacingOccurrences(of: "\n", with: "[NL]")
+        logger.info("list-sessions raw body (\(body.count) chars): \(preview)")
         return try SessionListParser.parse(body)
     }
 }
