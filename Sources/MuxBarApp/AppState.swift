@@ -5,6 +5,7 @@ import Features
 import TmuxKit
 import TerminalLauncher
 import MuxLogging
+import HotKey
 
 @MainActor
 public final class AppState: ObservableObject {
@@ -12,6 +13,8 @@ public final class AppState: ObservableObject {
     public let awakeStore: AwakeStore
     public let previewController: PreviewController
     public let terminalAdapter: TerminalAdapter?
+    public let templateRunner: TemplateRunner
+    public let hotKeyCenter: HotKeyCenter
     public private(set) var controlClient: ControlClient?
 
     @Published public var previewSession: TmuxSession?
@@ -22,6 +25,8 @@ public final class AppState: ObservableObject {
         self.previewController = PreviewController()
         self.sessionStore = SessionStore()
         self.awakeStore = AwakeStore()
+        self.templateRunner = TemplateRunner()
+        self.hotKeyCenter = HotKeyCenter()
 
         if let tmuxPath = TmuxPath.resolve() {
             self.terminalAdapter = TerminalAdapter(tmuxPath: tmuxPath)
@@ -36,6 +41,7 @@ public final class AppState: ObservableObject {
             self.controlClient = client
             try await client.bootstrap()
             sessionStore.bind(to: client)
+            registerHotkeys()
             logger.info("Bootstrap 완료")
         } catch {
             sessionStore.apply(error: "bootstrap 실패: \(error.localizedDescription)")
@@ -81,5 +87,38 @@ public final class AppState: ObservableObject {
     public func stopPreview() {
         previewController.stop()
         previewSession = nil
+    }
+
+    public func runTemplate(_ template: Template) {
+        guard let client = controlClient else { return }
+        Task {
+            do {
+                let sessionName = try await templateRunner.run(
+                    template: template,
+                    via: client,
+                    existingSessions: sessionStore.sessions
+                )
+                sessionStore.apply(error: nil)
+                _ = sessionName
+            } catch {
+                sessionStore.apply(error: "템플릿 실행 실패: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    public func registerHotkeys() {
+        // ⌘⇧A — Toggle Keep Awake
+        hotKeyCenter.register(id: "awake", key: .a, modifiers: [.command, .shift]) { [weak self] in
+            self?.toggleAwake()
+        }
+        // ⌘⇧1~9 — 세션 리스트 n번째 attach (간단 버전: index 순서)
+        for (idx, key) in [Key.one, .two, .three, .four, .five, .six, .seven, .eight, .nine].enumerated() {
+            hotKeyCenter.register(id: "favorite-\(idx+1)", key: key, modifiers: [.command, .shift]) { [weak self] in
+                guard let self else { return }
+                let visible = self.sessionStore.userVisibleSessions
+                guard idx < visible.count else { return }
+                self.attach(visible[idx])
+            }
+        }
     }
 }
