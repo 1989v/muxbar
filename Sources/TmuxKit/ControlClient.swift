@@ -202,6 +202,24 @@ public actor ControlClient {
         }
     }
 
+    /// TmuxCommand enum 에 없는 raw 문자열 커맨드 전송 (템플릿 확장용)
+    @discardableResult
+    public func sendRaw(_ commandLine: String, timeout: TimeInterval = 5.0) async throws -> String {
+        guard let stdin = stdinPipe?.fileHandleForWriting else {
+            throw ClientError.notConnected
+        }
+        return try await withCheckedThrowingContinuation { continuation in
+            Task {
+                await self.registerNextPendingCommand(continuation: continuation)
+                let line = commandLine + "\n"
+                if let data = line.data(using: .utf8) {
+                    do { try stdin.write(contentsOf: data) }
+                    catch { await self.rejectLastPending(error: error) }
+                }
+            }
+        }
+    }
+
     // 다음 %begin 이 붙일 cmdId 가 아직 미정이므로, 큐로 보관 → 첫 %begin 수신 시 바인딩.
     private var awaitingBegin: [CheckedContinuation<String, Error>] = []
 
