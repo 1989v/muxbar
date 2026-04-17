@@ -214,4 +214,9 @@ public actor ControlClient {
             cont.resume(throwing: error)
         }
     }
+
+    public func listSessions() async throws -> [TmuxSession] {
+        let body = try await send(.listSessions)
+        return try SessionListParser.parse(body)
+    }
 }
