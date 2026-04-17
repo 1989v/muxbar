@@ -8,15 +8,25 @@ public final class LoginItemService: ObservableObject {
 
     private let logger = MuxLogging.logger("Features.LoginItem")
 
+    /// SMAppService.mainApp 은 번들된 .app 에서만 유효. unbundled 실행 시 호출 회피.
+    private static var isBundled: Bool {
+        Bundle.main.bundleIdentifier != nil
+    }
+
     public init() {
-        self.isEnabled = (SMAppService.mainApp.status == .enabled)
+        self.isEnabled = Self.isBundled ? (SMAppService.mainApp.status == .enabled) : false
     }
 
     public func refresh() {
+        guard Self.isBundled else { return }
         isEnabled = (SMAppService.mainApp.status == .enabled)
     }
 
     public func set(_ enabled: Bool) {
+        guard Self.isBundled else {
+            logger.info("Unbundled — Login Item 토글 스킵")
+            return
+        }
         do {
             if enabled {
                 try SMAppService.mainApp.register()

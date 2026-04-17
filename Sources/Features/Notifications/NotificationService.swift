@@ -15,7 +15,17 @@ public final class NotificationService {
 
     public init() {}
 
+    /// UNUserNotificationCenter 는 bundle identifier 있는 .app 번들에서만 동작.
+    /// raw `swift run` / `./build/release/muxbar` 실행 시에는 nil → 크래시 방지 위해 skip.
+    private var canUseNotifications: Bool {
+        Bundle.main.bundleIdentifier != nil
+    }
+
     public func requestAuthorization() {
+        guard canUseNotifications else {
+            logger.info("Unbundled 실행 감지 — UserNotifications 스킵")
+            return
+        }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
             if let error {
                 self?.logger.warning("알림 권한 요청 오류: \(error.localizedDescription)")
@@ -75,6 +85,10 @@ public final class NotificationService {
     }
 
     private func postNotification(title: String, body: String) {
+        guard canUseNotifications else {
+            logger.info("[notify skipped] \(title): \(body)")
+            return
+        }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
