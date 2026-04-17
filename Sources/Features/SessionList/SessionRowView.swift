@@ -5,11 +5,18 @@ public struct SessionRowView: View {
     public let session: TmuxSession
     public let onAttach: () -> Void
     public let onKill: () -> Void
+    public let onPreview: () -> Void
 
-    public init(session: TmuxSession, onAttach: @escaping () -> Void, onKill: @escaping () -> Void) {
+    public init(
+        session: TmuxSession,
+        onAttach: @escaping () -> Void,
+        onKill: @escaping () -> Void,
+        onPreview: @escaping () -> Void
+    ) {
         self.session = session
         self.onAttach = onAttach
         self.onKill = onKill
+        self.onPreview = onPreview
     }
 
     public var body: some View {
@@ -29,6 +36,8 @@ public struct SessionRowView: View {
                         .truncationMode(.middle)
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture { onPreview() }
 
             Spacer(minLength: 8)
 
@@ -38,6 +47,7 @@ public struct SessionRowView: View {
 
             Menu {
                 Button("Attach") { onAttach() }
+                Button("Preview") { onPreview() }
                 Button("Kill", role: .destructive) { onKill() }
             } label: {
                 Image(systemName: "ellipsis")

@@ -5,11 +5,18 @@ public struct SessionListView: View {
     @ObservedObject public var store: SessionStore
     public let onAttach: (TmuxSession) -> Void
     public let onKill: (TmuxSession) -> Void
+    public let onPreview: (TmuxSession) -> Void
 
-    public init(store: SessionStore, onAttach: @escaping (TmuxSession) -> Void, onKill: @escaping (TmuxSession) -> Void) {
+    public init(
+        store: SessionStore,
+        onAttach: @escaping (TmuxSession) -> Void,
+        onKill: @escaping (TmuxSession) -> Void,
+        onPreview: @escaping (TmuxSession) -> Void
+    ) {
         self.store = store
         self.onAttach = onAttach
         self.onKill = onKill
+        self.onPreview = onPreview
     }
 
     public var body: some View {
@@ -24,7 +31,8 @@ public struct SessionListView: View {
                     SessionRowView(
                         session: session,
                         onAttach: { onAttach(session) },
-                        onKill: { onKill(session) }
+                        onKill: { onKill(session) },
+                        onPreview: { onPreview(session) }
                     )
                     Divider()
                 }
