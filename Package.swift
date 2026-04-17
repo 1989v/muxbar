@@ -15,7 +15,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MuxBarApp",
-            dependencies: ["Core", "TmuxKit", "MuxLogging", .product(name: "Logging", package: "swift-log")],
+            dependencies: ["Core", "TmuxKit", "Features", "TerminalLauncher", "MuxLogging", .product(name: "Logging", package: "swift-log")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
@@ -33,8 +33,19 @@ let package = Package(
             dependencies: [.product(name: "Logging", package: "swift-log")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
+        .target(
+            name: "TerminalLauncher",
+            dependencies: ["Core", "MuxLogging", .product(name: "Logging", package: "swift-log")],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
+        .target(
+            name: "Features",
+            dependencies: ["Core", "TmuxKit", "TerminalLauncher", "MuxLogging", .product(name: "Logging", package: "swift-log")],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
         .testTarget(name: "CoreTests", dependencies: ["Core"]),
         .testTarget(name: "TmuxKitTests", dependencies: ["TmuxKit"]),
         .testTarget(name: "TmuxKitIntegrationTests", dependencies: ["TmuxKit"]),
+        .testTarget(name: "TerminalLauncherTests", dependencies: ["TerminalLauncher"]),
     ]
 )
