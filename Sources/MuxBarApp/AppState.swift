@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 import Core
 import Features
 import TmuxKit
@@ -15,6 +16,8 @@ public final class AppState: ObservableObject {
     public let terminalAdapter: TerminalAdapter?
     public let templateRunner: TemplateRunner
     public let hotKeyCenter: HotKeyCenter
+    public let notificationService: NotificationService
+    public let loginItemService: LoginItemService
     public private(set) var controlClient: ControlClient?
 
     @Published public var previewSession: TmuxSession?
@@ -27,6 +30,8 @@ public final class AppState: ObservableObject {
         self.awakeStore = AwakeStore()
         self.templateRunner = TemplateRunner()
         self.hotKeyCenter = HotKeyCenter()
+        self.notificationService = NotificationService()
+        self.loginItemService = LoginItemService()
 
         if let tmuxPath = TmuxPath.resolve() {
             self.terminalAdapter = TerminalAdapter(tmuxPath: tmuxPath)
@@ -42,6 +47,15 @@ public final class AppState: ObservableObject {
             try await client.bootstrap()
             sessionStore.bind(to: client)
             registerHotkeys()
+            notificationService.requestAuthorization()
+            notificationService.startIdleCheck(store: sessionStore)
+            // 세션 변경 감지 → observeSessionsChange 호출
+            Task { [weak self] in
+                guard let self else { return }
+                for await _ in sessionStore.$sessions.values {
+                    self.notificationService.observeSessionsChange(current: self.sessionStore.sessions)
+                }
+            }
             logger.info("Bootstrap 완료")
         } catch {
             sessionStore.apply(error: "bootstrap 실패: \(error.localizedDescription)")
