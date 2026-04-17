@@ -2,7 +2,7 @@
 
 tmux session manager + caffeinate toggle — macOS menu bar app.
 
-> **상태**: 개발 중 (v0.1 MVP 준비). Plan 1 (Foundation + TmuxKit) 진행.
+> **상태**: 개발 중 (v0.1 MVP). Plan 2 (SessionList + KeepAwake) 완료.
 
 ## 사전 요구사항
 
@@ -13,11 +13,15 @@ tmux session manager + caffeinate toggle — macOS menu bar app.
 ## 빌드 & 실행
 
 ```bash
-swift build
-swift run muxbar
+swift build -c release
+./.build/release/muxbar
 ```
 
-메뉴바 우측에 `terminal` 아이콘이 생깁니다. Quit 으로 종료.
+메뉴바에서:
+- tmux 세션 리스트 표시
+- 각 세션 우측 `⋯` 메뉴 → Attach / Kill
+- Keep Awake 토글 — caffeinate 세션 `_muxbar-awake` 생성/제거
+- Quit 으로 종료
 
 ## 테스트
 
