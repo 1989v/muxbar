@@ -11,6 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", from: "1.2.0"),
     ],
     targets: [
         .executableTarget(
@@ -40,7 +41,11 @@ let package = Package(
         ),
         .target(
             name: "Features",
-            dependencies: ["Core", "TmuxKit", "TerminalLauncher", "MuxLogging", .product(name: "Logging", package: "swift-log")],
+            dependencies: [
+                "Core", "TmuxKit", "TerminalLauncher", "MuxLogging",
+                .product(name: "Logging", package: "swift-log"),
+                .product(name: "SwiftTerm", package: "SwiftTerm")
+            ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(name: "CoreTests", dependencies: ["Core"]),
