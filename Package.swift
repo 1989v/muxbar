@@ -15,17 +15,22 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MuxBarApp",
-            dependencies: ["Core", "TmuxKit", .product(name: "Logging", package: "swift-log")],
+            dependencies: ["Core", "TmuxKit", "MuxLogging", .product(name: "Logging", package: "swift-log")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "Core",
-            dependencies: [.product(name: "Logging", package: "swift-log")],
+            dependencies: ["MuxLogging", .product(name: "Logging", package: "swift-log")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "TmuxKit",
-            dependencies: ["Core", .product(name: "Logging", package: "swift-log")],
+            dependencies: ["Core", "MuxLogging", .product(name: "Logging", package: "swift-log")],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
+        .target(
+            name: "MuxLogging",
+            dependencies: [.product(name: "Logging", package: "swift-log")],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(name: "CoreTests", dependencies: ["Core"]),
