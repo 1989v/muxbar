@@ -52,6 +52,11 @@ struct MuxBarApp: App {
             ) {
                 SessionPreviewView(controller: appState.previewController)
             }
+            TemplatePickerView { template in
+                appState.runTemplate(template)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             Divider()
             KeepAwakeMenuItem(
                 sessionStore: appState.sessionStore,
