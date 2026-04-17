@@ -13,17 +13,32 @@ public struct KeepAwakeMenuItem: View {
     }
 
     public var body: some View {
-        HStack {
-            Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
-                .foregroundStyle(isAwake ? .yellow : .secondary)
-            Text("Keep Awake")
-            Spacer()
-            if awakeStore.isToggling {
-                ProgressView().scaleEffect(0.6)
-            } else {
-                Text(isAwake ? "ON" : "OFF")
-                    .font(.caption)
-                    .foregroundStyle(isAwake ? .green : .secondary)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
+                    .foregroundStyle(isAwake ? .yellow : .secondary)
+                Text("Keep Awake")
+                Spacer()
+                if awakeStore.isToggling {
+                    ProgressView().scaleEffect(0.6)
+                } else {
+                    Text(source.label)
+                        .font(.caption)
+                        .foregroundStyle(isAwake ? .green : .secondary)
+                }
+            }
+            if case .external = source, !externalSessionList.isEmpty {
+                Text("외부: \(externalSessionList)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } else if case .both = source {
+                Text("외부: \(externalSessionList)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
         }
         .padding(.horizontal, 8)
@@ -34,5 +49,15 @@ public struct KeepAwakeMenuItem: View {
 
     private var isAwake: Bool {
         awakeStore.isAwake(in: sessionStore)
+    }
+
+    private var source: AwakeStore.Source {
+        awakeStore.source(in: sessionStore)
+    }
+
+    private var externalSessionList: String {
+        sessionStore.caffeinateStatus.tmuxSessions
+            .filter { $0 != AwakeStore.awakeSessionName }
+            .joined(separator: ", ")
     }
 }
