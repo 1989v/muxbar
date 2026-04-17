@@ -148,13 +148,16 @@ public actor ControlClient {
 
     private func handleEvent(_ event: ControlEvent) {
         switch event {
+        case .commandBegin(_, let cmdId, _):
+            if !awaitingBegin.isEmpty {
+                let cont = awaitingBegin.removeFirst()
+                pendingCommands[cmdId] = cont
+            }
         case .commandOutput(let cmdId, let body):
-            // pending 명령의 응답으로 보관. 최종 end/error 에서 resolve.
             pendingBodies[cmdId] = body
         case .commandEnd(_, let cmdId, _):
-            if let body = pendingBodies.removeValue(forKey: cmdId) ?? Optional("") {
-                pendingCommands.removeValue(forKey: cmdId)?.resume(returning: body)
-            }
+            let body = pendingBodies.removeValue(forKey: cmdId) ?? ""
+            pendingCommands.removeValue(forKey: cmdId)?.resume(returning: body)
         case .commandError(_, let cmdId, _):
             let body = pendingBodies.removeValue(forKey: cmdId) ?? ""
             pendingCommands.removeValue(forKey: cmdId)?
@@ -170,5 +173,45 @@ public actor ControlClient {
     private func handleProcessTermination(status: Int32) {
         logger.warning("tmux -C process terminated (status=\(status))")
         disconnect()
+    }
+
+    /// tmux 커맨드를 전송하고 응답 본문(raw string)을 반환. %end 수신 시 resolve.
+    @discardableResult
+    public func send(_ command: TmuxCommand, timeout: TimeInterval = 5.0) async throws -> String {
+        guard let stdin = stdinPipe?.fileHandleForWriting else {
+            throw ClientError.notConnected
+        }
+
+        nextCmdId += 1
+        let _ = nextCmdId // cmdId 는 tmux 가 붙이는 것. 우리는 응답 매칭을 body carry 순서로 처리.
+
+        // tmux control mode 는 명령을 라인으로 받고, 본인이 cmdId 를 할당해 %begin 에 실음.
+        // 클라이언트 측에서는 "다음 %begin 의 cmdId" 를 예약 대기로 처리해야 함.
+        return try await withCheckedThrowingContinuation { continuation in
+            Task {
+                await self.registerNextPendingCommand(continuation: continuation)
+                let line = command.cliString + "\n"
+                if let data = line.data(using: .utf8) {
+                    do {
+                        try stdin.write(contentsOf: data)
+                    } catch {
+                        await self.rejectLastPending(error: error)
+                    }
+                }
+            }
+        }
+    }
+
+    // 다음 %begin 이 붙일 cmdId 가 아직 미정이므로, 큐로 보관 → 첫 %begin 수신 시 바인딩.
+    private var awaitingBegin: [CheckedContinuation<String, Error>] = []
+
+    private func registerNextPendingCommand(continuation: CheckedContinuation<String, Error>) {
+        awaitingBegin.append(continuation)
+    }
+
+    private func rejectLastPending(error: Error) {
+        if let cont = awaitingBegin.popLast() {
+            cont.resume(throwing: error)
+        }
     }
 }
