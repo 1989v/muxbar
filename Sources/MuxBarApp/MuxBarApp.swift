@@ -74,19 +74,12 @@ struct MuxBarApp: App {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
 
-            // 4. 시작 시 자동 실행 — .app 번들 실행 시에만 노출
-            if appState.loginItemService.isAvailable {
-                Divider()
-                Toggle(isOn: Binding(
-                    get: { appState.loginItemService.isEnabled },
-                    set: { appState.loginItemService.set($0) }
-                )) {
-                    Text("Launch at Login")
-                }
-                .toggleStyle(.switch)
+            Divider()
+
+            // 4. Settings (Open at Login 등 향후 추가)
+            SettingsMenu(loginItemService: appState.loginItemService)
                 .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-            }
+                .padding(.vertical, 6)
 
             Divider()
 
