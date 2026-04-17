@@ -11,8 +11,8 @@
 - [Plan 5 — Notifications + Distribution](plans/2026-04-17-plan-5-notifications-distribution.md)
 
 ## ADRs
-- [ADR-0001: tmux control mode 채택](adr/ADR-0001-tmux-control-mode-over-polling.md)
-- [ADR-0002: SessionProvider 프로토콜 분리](adr/ADR-0002-sessionprovider-protocol.md)
-- [ADR-0003: SwiftTerm 채택](adr/ADR-0003-swiftterm-rendering.md)
-- [ADR-0004: HotKey + Template 통합](adr/ADR-0004-hotkey-template.md)
-- [ADR-0005: Ad-hoc 서명 배포](adr/ADR-0005-adhoc-signing-distribution.md)
+- [ADR-0001: tmux control mode over polling](adr/ADR-0001-tmux-control-mode-over-polling.md)
+- [ADR-0002: SessionProvider protocol separation](adr/ADR-0002-sessionprovider-protocol.md)
+- [ADR-0003: SwiftTerm for ANSI rendering](adr/ADR-0003-swiftterm-rendering.md)
+- [ADR-0004: HotKey + Template integration](adr/ADR-0004-hotkey-template.md)
+- [ADR-0005: Ad-hoc signing distribution](adr/ADR-0005-adhoc-signing-distribution.md)

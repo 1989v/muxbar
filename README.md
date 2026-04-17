@@ -1,5 +1,7 @@
 # muxbar
 
+**Language:** [English](README.md) | [한국어](README.ko.md)
+
 > A native macOS menu bar app for tmux session management + caffeinate toggle.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -8,20 +10,38 @@
 
 ## Features
 
-- **Session list** — All tmux sessions at a glance, sorted by attached first and creation date
+- **Session list** — All tmux sessions at a glance, sorted by attached first and creation date (latest first within each group)
 - **Attach** — Open the selected session in Terminal.app / iTerm2 / Warp / Alacritty / kitty
 - **Kill** — Drop a session from the menu
-- **Live Preview** — Hover a session to see recent output (ANSI-rendered via SwiftTerm)
+- **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
 - **Templates** — Built-in and user-defined session layouts (YAML). New Session → pick a template.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
-- **Launch at Login** — Registers as a macOS Login Item (when installed as a bundled `.app`).
+- **Open at Login** — Registers as a macOS Login Item under Settings (when installed as a bundled `.app`).
 
 ## Menu bar icon
 
-- 0 sessions: plain coffee cup `☕`
-- Active sessions: cup + session count (`☕ 5`)
-- Keep Awake active: steaming cup, orange tint `☕💨`
+- 0 sessions: plain coffee cup
+- Active sessions: cup + session count badge
+- Keep Awake active: steaming cup, orange tint
+
+## Menu layout
+
+```
+┌ muxbar  ● (connected) ────┐
+│ ○ dev        2w /msa      │  ← session rows, attached first, newest first
+│ ● api        1w /Users    │    (scrollable if > 5)
+│ ○ logs       1w /var/log  │
+├───────────────────────────┤
+│ ☕ Keep Awake        ON   │  ← toggle (also ⌘⇧A)
+├───────────────────────────┤
+│ ⊞ New Session          ▸ │  ← templates submenu
+├───────────────────────────┤
+│ ⚙ Settings             ▸ │  ← Open at Login, future prefs
+├───────────────────────────┤
+│ Quit muxbar         ⌘Q    │
+└───────────────────────────┘
+```
 
 ## Requirements
 
@@ -82,10 +102,10 @@ swift test
 |---|---|---|
 | Session list / Attach / Kill / Preview | ✅ | ✅ |
 | Keep Awake, Templates, Hotkeys | ✅ | ✅ |
-| Launch at Login (Login Item) | ❌ (menu hidden) | ✅ |
+| Open at Login (Login Item) | ⚠ (Settings → shown disabled) | ✅ |
 | User notifications | ❌ | ✅ |
 
-The menu hides "Launch at Login" automatically when running unbundled.
+Features that need a proper `.app` bundle (Open at Login, notifications) fall back gracefully when running unbundled — the menu shows the item but disables the toggle with a hint.
 
 ## Keyboard shortcuts
 
