@@ -73,25 +73,21 @@ public final class SessionStore: ObservableObject {
 
     private func initialLoad(from provider: any SessionProvider) async {
         self.connectionState = .connecting(attempt: 1)
-        logger.info("initialLoad 시작 (list-sessions 요청)")
         do {
             let fetched = try await provider.listSessions()
             self.sessions = fetched
             self.connectionState = .connected
-            logger.info("initialLoad 완료 — \(fetched.count) sessions (\(fetched.map(\.id).joined(separator: ", ")))")
             await refreshCaffeinate(from: provider)
         } catch {
             self.apply(error: "initial load failed: \(error.localizedDescription)")
             self.connectionState = .failed(reason: error.localizedDescription)
-            logger.error("initialLoad 실패: \(error.localizedDescription)")
+            logger.error("initial load failed: \(error.localizedDescription)")
         }
     }
 
     private func refresh(from provider: any SessionProvider) async {
         do {
-            let fetched = try await provider.listSessions()
-            self.sessions = fetched
-            logger.info("refresh — \(fetched.count) sessions")
+            self.sessions = try await provider.listSessions()
             await refreshCaffeinate(from: provider)
         } catch {
             self.apply(error: "refresh failed: \(error.localizedDescription)")
@@ -103,9 +99,8 @@ public final class SessionStore: ObservableObject {
             let tmuxList = try await provider.listCaffeinateSessions()
             let systemActive = SystemCaffeinateDetector.isActive()
             self.caffeinateStatus = CaffeinateStatus(tmuxSessions: tmuxList, systemActive: systemActive)
-            logger.info("caffeinate 상태 — tmux=\(tmuxList.count) (\(tmuxList.joined(separator: ","))), system=\(systemActive)")
         } catch {
-            logger.warning("caffeinate 감지 실패: \(error.localizedDescription)")
+            logger.warning("caffeinate detection failed: \(error.localizedDescription)")
         }
     }
 

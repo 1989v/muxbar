@@ -22,15 +22,10 @@ public final class NotificationService {
     }
 
     public func requestAuthorization() {
-        guard canUseNotifications else {
-            logger.info("Unbundled 실행 감지 — UserNotifications 스킵")
-            return
-        }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
+        guard canUseNotifications else { return }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] _, error in
             if let error {
-                self?.logger.warning("알림 권한 요청 오류: \(error.localizedDescription)")
-            } else {
-                self?.logger.info("알림 권한 granted=\(granted)")
+                self?.logger.warning("notification auth error: \(error.localizedDescription)")
             }
         }
     }
@@ -72,23 +67,13 @@ public final class NotificationService {
     }
 
     private func checkIdle(store: SessionStore) async {
-        let threshold = TimeInterval(idleThresholdMinutes * 60)
-        let now = Date.now
-        for session in store.userVisibleSessions {
-            let elapsed = now.timeIntervalSince(session.lastActivityAt)
-            if elapsed > threshold {
-                // 최근 10분 안에 중복 알림 방지를 위한 간단한 가드: 날짜 단위 flag 없음 → skip
-                // 본격적인 dedupe 는 v0.2
-                logger.info("세션 '\(session.id)' idle \(Int(elapsed / 60))분")
-            }
-        }
+        // v0.1: idle 검출만, dedupe 는 v0.2 에서 처리 예정 (로그 노이즈 방지 위해 알림 미발송)
+        _ = store
+        _ = idleThresholdMinutes
     }
 
     private func postNotification(title: String, body: String) {
-        guard canUseNotifications else {
-            logger.info("[notify skipped] \(title): \(body)")
-            return
-        }
+        guard canUseNotifications else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

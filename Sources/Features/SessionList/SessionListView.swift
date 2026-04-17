@@ -34,7 +34,6 @@ public struct SessionListView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             let rowHeight: CGFloat = 40
-            let maxHeight = CGFloat(visibleRowLimit) * rowHeight
             ScrollView(.vertical, showsIndicators: store.userVisibleSessions.count > visibleRowLimit) {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(store.userVisibleSessions) { session in

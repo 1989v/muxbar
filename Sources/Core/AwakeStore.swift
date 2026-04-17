@@ -61,25 +61,19 @@ public final class AwakeStore: ObservableObject {
         let status = store.caffeinateStatus
 
         if status.isActive {
-            // 1) 모든 tmux caffeinate 세션 kill (muxbar 관리 + 외부 전부)
             for sessionName in status.tmuxSessions {
                 do {
                     try await provider.kill(sessionName: sessionName)
-                    logger.info("kill tmux 세션 '\(sessionName)'")
                 } catch {
-                    logger.warning("'\(sessionName)' kill 실패: \(error.localizedDescription)")
+                    logger.warning("kill '\(sessionName)' failed: \(error.localizedDescription)")
                 }
             }
-            // 2) tmux 밖 caffeinate 가 있으면 pkill
             if status.systemActive {
                 SystemCaffeinateDetector.pkillAll()
-                logger.info("시스템 caffeinate pkill")
             }
-            logger.info("Keep Awake OFF — tmux \(status.tmuxSessions.count)개 + system=\(status.systemActive)")
         } else {
             let cmd = "caffeinate \(flags.cliArgs)"
             await store.createSession(name: Self.awakeSessionName, command: cmd, via: provider)
-            logger.info("Keep Awake ON (caffeinate \(flags.cliArgs))")
         }
 
         // 상태 재갱신 (tmux 이벤트 기다릴 필요 없이 즉시 반영)

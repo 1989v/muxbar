@@ -64,31 +64,29 @@ public final class AppState: ObservableObject {
             registerHotkeys()
             notificationService.requestAuthorization()
             notificationService.startIdleCheck(store: sessionStore)
-            // 세션 변경 감지 → observeSessionsChange 호출
             Task { [weak self] in
                 guard let self else { return }
                 for await _ in sessionStore.$sessions.values {
                     self.notificationService.observeSessionsChange(current: self.sessionStore.sessions)
                 }
             }
-            logger.info("Bootstrap 완료")
         } catch {
-            sessionStore.apply(error: "bootstrap 실패: \(error.localizedDescription)")
+            sessionStore.apply(error: "bootstrap failed: \(error.localizedDescription)")
             sessionStore.apply(connectionState: .failed(reason: error.localizedDescription))
-            logger.error("Bootstrap 실패: \(error.localizedDescription)")
+            logger.error("bootstrap failed: \(error.localizedDescription)")
         }
     }
 
     public func attach(_ session: TmuxSession, using app: TerminalApp = .terminal) {
         guard let adapter = terminalAdapter else {
-            sessionStore.apply(error: "tmux 바이너리 없음")
+            sessionStore.apply(error: "tmux binary not found")
             return
         }
         Task {
             do {
                 try await adapter.attach(sessionName: session.id, using: app)
             } catch {
-                sessionStore.apply(error: "attach 실패: \(error.localizedDescription)")
+                sessionStore.apply(error: "attach failed: \(error.localizedDescription)")
             }
         }
     }
@@ -130,7 +128,7 @@ public final class AppState: ObservableObject {
                 sessionStore.apply(error: nil)
                 _ = sessionName
             } catch {
-                sessionStore.apply(error: "템플릿 실행 실패: \(error.localizedDescription)")
+                sessionStore.apply(error: "template run failed: \(error.localizedDescription)")
             }
         }
     }

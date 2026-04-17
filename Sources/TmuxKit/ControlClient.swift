@@ -20,7 +20,6 @@ public actor ControlClient {
     private var stderrPipe: Pipe?
     private let protocolParser = ControlProtocol()
 
-    private var nextCmdId: Int = 0
     private var pendingCommands: [Int: CheckedContinuation<String, Error>] = [:]
     private var pendingBodies: [Int: String] = [:]
 
@@ -63,7 +62,6 @@ public actor ControlClient {
         try ensureServerRunning()
         try spawnControlProcess()
         startStdoutPump()
-        logger.info("ControlClient bootstrapped")
     }
 
     private func ensureServerRunning() throws {
@@ -180,46 +178,29 @@ public actor ControlClient {
     }
 
     /// tmux 커맨드를 전송하고 응답 본문(raw string)을 반환. %end 수신 시 resolve.
+    /// cmdId 는 tmux 가 할당하므로 클라이언트는 "다음 %begin" 을 FIFO 로 예약.
     @discardableResult
-    public func send(_ command: TmuxCommand, timeout: TimeInterval = 5.0) async throws -> String {
-        guard let stdin = stdinPipe?.fileHandleForWriting else {
-            throw ClientError.notConnected
-        }
-
-        nextCmdId += 1
-        let _ = nextCmdId // cmdId 는 tmux 가 붙이는 것. 우리는 응답 매칭을 body carry 순서로 처리.
-
-        // tmux control mode 는 명령을 라인으로 받고, 본인이 cmdId 를 할당해 %begin 에 실음.
-        // 클라이언트 측에서는 "다음 %begin 의 cmdId" 를 예약 대기로 처리해야 함.
-        return try await withCheckedThrowingContinuation { continuation in
-            Task {
-                await self.registerNextPendingCommand(continuation: continuation)
-                let line = command.cliString + "\n"
-                if let data = line.data(using: .utf8) {
-                    do {
-                        try stdin.write(contentsOf: data)
-                    } catch {
-                        await self.rejectLastPending(error: error)
-                    }
-                }
-            }
-        }
+    public func send(_ command: TmuxCommand) async throws -> String {
+        try await writeCommand(command.cliString)
     }
 
-    /// TmuxCommand enum 에 없는 raw 문자열 커맨드 전송 (템플릿 확장용)
+    /// TmuxCommand 에 없는 raw 문자열 커맨드 (템플릿 확장용).
     @discardableResult
-    public func sendRaw(_ commandLine: String, timeout: TimeInterval = 5.0) async throws -> String {
+    public func sendRaw(_ commandLine: String) async throws -> String {
+        try await writeCommand(commandLine)
+    }
+
+    private func writeCommand(_ commandLine: String) async throws -> String {
         guard let stdin = stdinPipe?.fileHandleForWriting else {
             throw ClientError.notConnected
         }
         return try await withCheckedThrowingContinuation { continuation in
+            // actor 내부 → Task 는 동일 actor isolation 상속
             Task {
-                await self.registerNextPendingCommand(continuation: continuation)
-                let line = commandLine + "\n"
-                if let data = line.data(using: .utf8) {
-                    do { try stdin.write(contentsOf: data) }
-                    catch { await self.rejectLastPending(error: error) }
-                }
+                self.registerNextPendingCommand(continuation: continuation)
+                guard let data = (commandLine + "\n").data(using: .utf8) else { return }
+                do { try stdin.write(contentsOf: data) }
+                catch { self.rejectLastPending(error: error) }
             }
         }
     }
@@ -239,8 +220,6 @@ public actor ControlClient {
 
     public func listSessions() async throws -> [TmuxSession] {
         let body = try await send(.listSessions)
-        let preview = body.prefix(500).replacingOccurrences(of: "\t", with: "[TAB]").replacingOccurrences(of: "\n", with: "[NL]")
-        logger.info("list-sessions raw body (\(body.count) chars): \(preview)")
         return try SessionListParser.parse(body)
     }
 }

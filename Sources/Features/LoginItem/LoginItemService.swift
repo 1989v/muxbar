@@ -26,21 +26,16 @@ public final class LoginItemService: ObservableObject {
     }
 
     public func set(_ enabled: Bool) {
-        guard Self.isBundled else {
-            logger.info("Unbundled — Login Item 토글 스킵")
-            return
-        }
+        guard Self.isBundled else { return }
         do {
             if enabled {
                 try SMAppService.mainApp.register()
-                logger.info("Login Item 등록됨")
             } else {
                 try SMAppService.mainApp.unregister()
-                logger.info("Login Item 해제됨")
             }
             refresh()
         } catch {
-            logger.error("Login Item 토글 실패: \(error.localizedDescription)")
+            logger.error("login item toggle failed: \(error.localizedDescription)")
         }
     }
 }

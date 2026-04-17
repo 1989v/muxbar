@@ -5,7 +5,6 @@ public final class ControlProtocol {
 
     // %begin 직후부터 %end/%error 전까지의 본문 누적
     private var inCommand: Bool = false
-    private var commandCmdId: Int = -1
     private var commandBody: [String] = []
 
     public init() {}
@@ -25,9 +24,7 @@ public final class ControlProtocol {
     }
 
     private func parseLine(_ line: String) -> [ControlEvent] {
-        if line.isEmpty {
-            return inCommand ? [] : []
-        }
+        if line.isEmpty { return [] }
 
         // guard lines
         if line.hasPrefix("%begin ") {
@@ -38,13 +35,10 @@ public final class ControlProtocol {
             return handleEnd(line, isError: true)
         }
 
-        // 커맨드 응답 본문 누적
         if inCommand {
             commandBody.append(line)
             return []
         }
-
-        // 비동기 이벤트 (다음 Task 에서 확장)
         return parseAsyncEvent(line)
     }
 
@@ -53,7 +47,6 @@ public final class ControlProtocol {
             return [.unknown(line: line)]
         }
         inCommand = true
-        commandCmdId = cmdId
         commandBody = []
         return [.commandBegin(time: time, cmdId: cmdId, flags: flags)]
     }

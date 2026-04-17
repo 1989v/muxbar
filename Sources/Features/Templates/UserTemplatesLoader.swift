@@ -38,30 +38,25 @@ public enum UserTemplatesLoader {
 
     public static func load() -> [Template] {
         bootstrapDirectoryIfNeeded()
-        let logger = MuxLogging.logger("Features.UserTemplates")
-
         let fm = FileManager.default
-        guard let files = try? fm.contentsOfDirectory(
-            at: directory, includingPropertiesForKeys: nil
-        ) else {
+        guard let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
             return []
         }
 
+        let logger = MuxLogging.logger("Features.UserTemplates")
         let yamlFiles = files.filter {
             let ext = $0.pathExtension.lowercased()
             return (ext == "yaml" || ext == "yml") && !$0.lastPathComponent.hasPrefix("_")
         }
 
-        var loaded: [Template] = []
-        for file in yamlFiles {
+        return yamlFiles.compactMap { file in
             do {
                 let content = try String(contentsOf: file, encoding: .utf8)
-                let template = try YAMLDecoder().decode(Template.self, from: content)
-                loaded.append(template)
+                return try YAMLDecoder().decode(Template.self, from: content)
             } catch {
-                logger.warning("템플릿 로드 실패 \(file.lastPathComponent): \(error.localizedDescription)")
+                logger.warning("template load failed \(file.lastPathComponent): \(error.localizedDescription)")
+                return nil
             }
         }
-        return loaded
     }
 }

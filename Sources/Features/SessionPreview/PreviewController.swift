@@ -16,7 +16,6 @@ public final class PreviewController: ObservableObject {
     private let logger = MuxLogging.logger("Features.PreviewController")
     private var subscription: Task<Void, Never>?
     private var pendingUpdate: Task<Void, Never>?
-    private var lastRenderAt: Date = .distantPast
     private var currentSessionId: String?
 
     public init() {}
@@ -34,7 +33,7 @@ public final class PreviewController: ObservableObject {
                 self.render()
                 self.isLoading = false
             } catch {
-                self.logger.error("capturePane 실패: \(error.localizedDescription)")
+                self.logger.warning("capture-pane failed: \(error.localizedDescription)")
                 self.isLoading = false
             }
         }
@@ -66,7 +65,6 @@ public final class PreviewController: ObservableObject {
 
     private func render() {
         attributedContent = engine.renderAttributed()
-        lastRenderAt = .now
     }
 
     public func stop() {
