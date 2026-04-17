@@ -25,7 +25,7 @@ public actor ControlClient {
     private var pendingBodies: [Int: String] = [:]
 
     private var eventStreamContinuation: AsyncStream<ControlEvent>.Continuation?
-    public nonisolated let events: AsyncStream<ControlEvent>
+    public nonisolated let rawEvents: AsyncStream<ControlEvent>
 
     public init(tmuxPath: String? = TmuxPath.resolve()) throws {
         guard let path = tmuxPath else { throw ClientError.tmuxBinaryNotFound }
@@ -33,7 +33,7 @@ public actor ControlClient {
 
         // AsyncStream 의 빌더 클로저는 동기 실행되므로 init 리턴 전에 continuation 확보 완료.
         var localContinuation: AsyncStream<ControlEvent>.Continuation!
-        self.events = AsyncStream<ControlEvent> { continuation in
+        self.rawEvents = AsyncStream<ControlEvent> { continuation in
             localContinuation = continuation
         }
         self.eventStreamContinuation = localContinuation
