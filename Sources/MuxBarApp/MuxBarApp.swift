@@ -64,6 +64,16 @@ struct MuxBarApp: App {
                 onToggle: { appState.toggleAwake() }
             )
             Divider()
+            Toggle(isOn: Binding(
+                get: { appState.loginItemService.isEnabled },
+                set: { appState.loginItemService.set($0) }
+            )) {
+                Text("시작 시 자동 실행")
+            }
+            .toggleStyle(.switch)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            Divider()
             Button("Quit muxbar") { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
                 .padding(.horizontal, 8)
