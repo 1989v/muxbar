@@ -40,8 +40,18 @@ struct MuxBarApp: App {
             SessionListView(
                 store: appState.sessionStore,
                 onAttach: { appState.attach($0) },
-                onKill: { appState.kill($0) }
+                onKill: { appState.kill($0) },
+                onPreview: { appState.startPreview(for: $0) }
             )
+            .popover(
+                isPresented: Binding(
+                    get: { appState.previewSession != nil },
+                    set: { if !$0 { appState.stopPreview() } }
+                ),
+                arrowEdge: .leading
+            ) {
+                SessionPreviewView(controller: appState.previewController)
+            }
             Divider()
             KeepAwakeMenuItem(
                 sessionStore: appState.sessionStore,

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Core
+import Features
 import TmuxKit
 import TerminalLauncher
 import MuxLogging
@@ -9,12 +10,16 @@ import MuxLogging
 public final class AppState: ObservableObject {
     public let sessionStore: SessionStore
     public let awakeStore: AwakeStore
+    public let previewController: PreviewController
     public let terminalAdapter: TerminalAdapter?
     public private(set) var controlClient: ControlClient?
+
+    @Published public var previewSession: TmuxSession?
 
     private let logger = MuxLogging.logger("MuxBarApp.AppState")
 
     public init() {
+        self.previewController = PreviewController()
         self.sessionStore = SessionStore()
         self.awakeStore = AwakeStore()
 
@@ -65,5 +70,16 @@ public final class AppState: ObservableObject {
         Task {
             await awakeStore.toggle(in: sessionStore, via: client)
         }
+    }
+
+    public func startPreview(for session: TmuxSession) {
+        guard let client = controlClient else { return }
+        previewSession = session
+        previewController.start(session: session, provider: client)
+    }
+
+    public func stopPreview() {
+        previewController.stop()
+        previewSession = nil
     }
 }
