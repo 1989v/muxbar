@@ -12,6 +12,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
         .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", from: "1.2.0"),
+        .package(url: "https://github.com/soffes/HotKey.git", from: "0.2.0"),
+        .package(url: "https://github.com/jpsim/Yams.git", from: "5.0.0"),
     ],
     targets: [
         .executableTarget(
@@ -44,7 +46,9 @@ let package = Package(
             dependencies: [
                 "Core", "TmuxKit", "TerminalLauncher", "MuxLogging",
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "SwiftTerm", package: "SwiftTerm")
+                .product(name: "SwiftTerm", package: "SwiftTerm"),
+                .product(name: "HotKey", package: "HotKey"),
+                .product(name: "Yams", package: "Yams")
             ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
