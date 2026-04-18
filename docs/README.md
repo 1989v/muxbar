@@ -10,6 +10,9 @@
 - [Plan 4 — Templates + HotKeys](plans/2026-04-17-plan-4-hotkeys-templates.md)
 - [Plan 5 — Notifications + Distribution](plans/2026-04-17-plan-5-notifications-distribution.md)
 
+## Guides
+- [GitHub repo discoverability checklist](guides/github-discoverability.md) — topics, description, social preview, Homebrew tap, awesome lists 등 공개 레포 출시 체크리스트
+
 ## ADRs
 - [ADR-0001: tmux control mode over polling](adr/ADR-0001-tmux-control-mode-over-polling.md)
 - [ADR-0002: SessionProvider protocol separation](adr/ADR-0002-sessionprovider-protocol.md)
