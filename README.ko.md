@@ -57,40 +57,54 @@
 ## 요구사항
 
 - macOS 13 (Ventura) 이상
-- `tmux` (`brew install tmux`)
+- `tmux` — `brew install tmux`
+- Xcode Command Line Tools — 아직 없다면 `xcode-select --install`
 
-## 설치
+## 빠른 시작
 
-### Homebrew (배포 후 제공)
+한 덩이로 복사해 실행:
 
 ```bash
-brew install --cask 1989v/tap/muxbar
+git clone https://github.com/1989v/muxbar.git
+cd muxbar
+./build.sh install
+open /Applications/muxbar.app
 ```
 
-### 소스에서 직접 빌드 (Xcode 불필요)
+이걸로 끝. 메뉴바에 커피잔 아이콘이 뜨고, 클릭하면 tmux 세션 리스트가 보입니다.
 
-Command Line Tools + Swift 5.9+ 만 있으면 빌드 가능.
+## 설치 옵션
+
+### 1. 소스에서 직접 빌드 (현재 기본 경로)
+
+Xcode 없이 Command Line Tools 만으로 됩니다.
 
 ```bash
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
 
-./build.sh           # Release 빌드 + .app 번들 생성
-./build.sh open      # 빌드 + 즉시 실행
+./build.sh           # Release 빌드 + .app 번들 (./muxbar.app 생성)
+./build.sh open      # 빌드 + 레포 디렉터리에서 바로 실행
 ./build.sh install   # 빌드 + /Applications 로 복사
 ```
 
-`build.sh` 동작:
+`build.sh` 가 하는 일:
 1. `swift build -c release`
-2. `muxbar.app/Contents/{MacOS, Info.plist}` 구조 생성
-3. Ad-hoc codesign (`codesign --sign -`)
-4. quarantine 속성 제거
+2. 바이너리를 `muxbar.app/Contents/{MacOS, Info.plist}` 구조로 래핑
+3. `codesign --sign -` 로 ad-hoc 서명 (Apple Developer 계정 불필요)
+4. quarantine 속성 제거 → Gatekeeper 경고 없이 첫 실행 가능
 
-### 수동 다운로드 (.dmg, 배포 후)
+### 2. Homebrew cask *(배포 후 제공 예정)*
 
-1. [Releases](https://github.com/1989v/muxbar/releases) 에서 `.dmg` 다운로드
-2. `muxbar.app` 을 Applications 로 드래그
-3. **첫 실행**: 우클릭 → 열기 (ad-hoc 서명이라 Gatekeeper 우회 필요)
+첫 릴리스가 나오면 아래 명령으로:
+
+```bash
+brew install --cask 1989v/tap/muxbar
+```
+
+### 3. 미리 빌드된 `.dmg` *(배포 후 제공 예정)*
+
+각 [GitHub Release](https://github.com/1989v/muxbar/releases) 에 ad-hoc 서명된 `.dmg` 를 첨부할 계획. 첫 실행 시 우클릭 → 열기 로 Gatekeeper 통과 (notarize 는 안 됨).
 
 ## 개발
 

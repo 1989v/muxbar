@@ -57,40 +57,54 @@
 ## Requirements
 
 - macOS 13 (Ventura) or later
-- `tmux` (`brew install tmux`)
+- `tmux` — `brew install tmux`
+- Xcode Command Line Tools — `xcode-select --install` (if you haven't already)
 
-## Installation
+## Quick start
 
-### Homebrew (planned)
+Copy-paste, in one shot:
 
 ```bash
-brew install --cask 1989v/tap/muxbar
+git clone https://github.com/1989v/muxbar.git
+cd muxbar
+./build.sh install
+open /Applications/muxbar.app
 ```
 
-### Build from source (Xcode not required)
+That's it. The coffee-cup icon appears in your menu bar. Click it, and you'll see your tmux sessions.
 
-You only need the Command Line Tools + Swift 5.9+.
+## Installation options
+
+### 1. Build from source (current default)
+
+Works with just Command Line Tools — Xcode not required.
 
 ```bash
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
 
-./build.sh           # Release build + .app bundle
-./build.sh open      # Build + open
+./build.sh           # Release build + .app bundle (creates ./muxbar.app)
+./build.sh open      # Build + launch from the repo directory
 ./build.sh install   # Build + copy to /Applications
 ```
 
-`build.sh` does:
+What `build.sh` actually does:
 1. `swift build -c release`
-2. Creates `muxbar.app/Contents/{MacOS,Info.plist}`
-3. Ad-hoc codesigns with `codesign --sign -`
-4. Strips quarantine attribute
+2. Wraps the binary into `muxbar.app/Contents/{MacOS,Info.plist}`
+3. Ad-hoc signs it with `codesign --sign -` (no Apple Developer account needed)
+4. Strips the quarantine attribute so the app can launch without Gatekeeper prompts
 
-### Manual download (after release)
+### 2. Homebrew cask *(not yet published)*
 
-1. Download the `.dmg` from [Releases](https://github.com/1989v/muxbar/releases)
-2. Drag `muxbar.app` into Applications
-3. First launch: **right-click → Open** (needed because the app uses ad-hoc signing)
+Once the first release is out:
+
+```bash
+brew install --cask 1989v/tap/muxbar
+```
+
+### 3. Pre-built `.dmg` *(not yet published)*
+
+A signed-by-hand `.dmg` will be attached to each [GitHub Release](https://github.com/1989v/muxbar/releases). On first launch, right-click → Open to pass Gatekeeper (the app uses ad-hoc signing, not notarized).
 
 ## Development
 
