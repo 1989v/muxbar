@@ -28,20 +28,31 @@
 ## Menu layout
 
 ```
-┌ muxbar  ● (connected) ────┐
-│ ○ dev        2w /msa      │  ← session rows, attached first, newest first
-│ ● api        1w /Users    │    (scrollable if > 5)
-│ ○ logs       1w /var/log  │
-├───────────────────────────┤
-│ ☕ Keep Awake        ON   │  ← toggle (also ⌘⇧A)
-├───────────────────────────┤
-│ ⊞ New Session          ▸ │  ← templates submenu
-├───────────────────────────┤
-│ ⚙ Settings             ▸ │  ← Open at Login, future prefs
-├───────────────────────────┤
-│ Quit muxbar         ⌘Q    │
-└───────────────────────────┘
+  ┌ ▣ muxbar                   ● ┐  ← header (name + connection dot)
+  ├──────────────────────────────┤
+  │ ● api                1w  ⋯  │   ← attached (green dot)
+  │    /Users                    │      cwd as subtitle
+  ├──────────────────────────────┤
+  │ ○ dev                2w  ⋯  │   ← detached
+  │    /Users/kgd/msa            │
+  ├──────────────────────────────┤
+  │ ○ logs               1w  ⋯  │
+  │    /var/log                  │
+  ├──────────────────────────────┤
+  │ ☕  Keep Awake          ON  │   ← toggle (⌘⇧A)
+  ├──────────────────────────────┤
+  │ ⊞  New Session          ▸   │   ← templates submenu
+  ├──────────────────────────────┤
+  │ ⚙  Settings             ▸   │   ← Open at Login, future prefs
+  ├──────────────────────────────┤
+  │    Quit muxbar          ⌘Q  │
+  └──────────────────────────────┘
 ```
+
+- Session rows show attached (●) first, then detached (○) — each group newest-first
+- More than 5 rows → list scrolls inside the menu
+- `⋯` on a row opens the action menu (Attach / Preview / Kill)
+- Tapping the session name itself opens the live preview popover
 
 ## Requirements
 
