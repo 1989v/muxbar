@@ -30,22 +30,22 @@
 ```
   ┌ ▣ muxbar                   ● ┐  ← header (name + connection dot)
   ├──────────────────────────────┤
-  │ ● api                1w  ⋯  │   ← attached (green dot)
+  │ ● api                1w  ⋯   │   ← attached (green dot)
   │    /Users                    │      cwd as subtitle
   ├──────────────────────────────┤
-  │ ○ dev                2w  ⋯  │   ← detached
+  │ ○ dev                2w  ⋯   │   ← detached
   │    /Users/kgd/msa            │
   ├──────────────────────────────┤
-  │ ○ logs               1w  ⋯  │
+  │ ○ logs               1w  ⋯   │
   │    /var/log                  │
   ├──────────────────────────────┤
-  │ ☕  Keep Awake          ON  │   ← toggle (⌘⇧A)
+  │ ☕  Keep Awake          ON    │   ← toggle (⌘⇧A)
   ├──────────────────────────────┤
-  │ ⊞  New Session          ▸   │   ← templates submenu
+  │ ⊞  New Session          ▸    │   ← templates submenu
   ├──────────────────────────────┤
-  │ ⚙  Settings             ▸   │   ← Open at Login, future prefs
+  │ ⚙  Settings             ▸    │   ← Open at Login, future prefs
   ├──────────────────────────────┤
-  │    Quit muxbar          ⌘Q  │
+  │    Quit muxbar          ⌘Q   │
   └──────────────────────────────┘
 ```
 
