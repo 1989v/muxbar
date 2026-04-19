@@ -26,16 +26,17 @@ struct AttributedTextView: NSViewRepresentable {
     let content: NSAttributedString
 
     func makeNSView(context: Context) -> NSScrollView {
-        let textView = NSTextView(frame: .zero)
-        textView.isEditable = false
-        textView.isSelectable = true
-        textView.backgroundColor = .textBackgroundColor
-        textView.textContainerInset = NSSize(width: 4, height: 4)
-
-        let scrollView = NSScrollView()
+        // 수동 NSScrollView + NSTextView 조합은 autoresizing 미설정으로 텍스트뷰가 0x0 프레임에 고정됨.
+        let scrollView = NSTextView.scrollableTextView()
         scrollView.hasVerticalScroller = true
-        scrollView.documentView = textView
         scrollView.drawsBackground = false
+
+        if let textView = scrollView.documentView as? NSTextView {
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.backgroundColor = .textBackgroundColor
+            textView.textContainerInset = NSSize(width: 4, height: 4)
+        }
         return scrollView
     }
 
