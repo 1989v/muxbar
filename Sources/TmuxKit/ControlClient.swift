@@ -220,6 +220,11 @@ public actor ControlClient {
 
     public func listSessions() async throws -> [TmuxSession] {
         let body = try await send(.listSessions)
-        return try SessionListParser.parse(body)
+        do {
+            return try SessionListParser.parse(body)
+        } catch {
+            logger.error("listSessions parse failed: \(error) | body=\(body.debugDescription)")
+            throw error
+        }
     }
 }
