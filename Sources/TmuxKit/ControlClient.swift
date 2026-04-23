@@ -26,6 +26,12 @@ public actor ControlClient {
     private var eventStreamContinuation: AsyncStream<ControlEvent>.Continuation?
     public nonisolated let rawEvents: AsyncStream<ControlEvent>
 
+    /// `events` / `paneOutput` 구독자에게 fan-out 하는 브로드캐스터.
+    /// `rawEvents` 를 직접 iterate 하면 AsyncStream 단일 소비자 시맨틱 때문에
+    /// 이벤트가 구독자끼리 분할 소비되어 누락됨 (특히 %sessions-changed).
+    nonisolated let sessionEventBroadcaster = EventBroadcaster<SessionProviderEvent>()
+    nonisolated let paneOutputBroadcaster = EventBroadcaster<PaneOutputChunk>()
+
     public init(tmuxPath: String? = TmuxPath.resolve()) throws {
         guard let path = tmuxPath else { throw ClientError.tmuxBinaryNotFound }
         self.tmuxPath = path
@@ -55,6 +61,8 @@ public actor ControlClient {
         pendingCommands.removeAll()
 
         eventStreamContinuation?.finish()
+        sessionEventBroadcaster.finish()
+        paneOutputBroadcaster.finish()
         logger.info("ControlClient disconnected")
     }
 
@@ -164,12 +172,28 @@ public actor ControlClient {
             let body = pendingBodies.removeValue(forKey: cmdId) ?? ""
             pendingCommands.removeValue(forKey: cmdId)?
                 .resume(throwing: ClientError.processFailedToStart("tmux error: \(body)"))
-        case .exit:
-            disconnect()
         default:
             break
         }
+
+        // 구독자 전용 브로드캐스터에 fan-out. disconnect 이전에 보내야 구독자가
+        // .connectionLost 를 받고 나서 스트림이 정상 종료된다.
+        switch event {
+        case .sessionsChanged:
+            sessionEventBroadcaster.yield(.sessionsChanged)
+        case .exit:
+            sessionEventBroadcaster.yield(.connectionLost)
+        case .paneOutput(let paneId, let data):
+            paneOutputBroadcaster.yield(PaneOutputChunk(paneId: paneId, data: data))
+        default:
+            break
+        }
+
         eventStreamContinuation?.yield(event)
+
+        if case .exit = event {
+            disconnect()
+        }
     }
 
     private func handleProcessTermination(status: Int32) {
