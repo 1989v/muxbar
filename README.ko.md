@@ -8,6 +8,10 @@
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
+<p align="center">
+  <img src="docs/assets/screenshots/menu.png" alt="muxbar 메뉴바 드롭다운" width="420">
+</p>
+
 ## 주요 기능
 
 - **세션 리스트** — 활성 세션 전체를 메뉴바에서 확인. attached 우선, 그룹 내 생성일 최신순 정렬
@@ -160,6 +164,21 @@ windows:
 - 파일명이 `_` 로 시작하면 로더가 무시 (`_example.yaml` 같은 참고용 파일 용도)
 - 메뉴에서 reload: **New Session → Reload Templates**
 - 폴더 열기: **New Session → Edit Templates…**
+
+### 장시간 실행 스크립트 래핑
+
+polling / watcher / 1회성 설치 스크립트처럼 백그라운드에서 계속 돌려두고 싶은 작업에 잘 맞습니다. `command` 뒤에 `; exec $SHELL` 을 붙이면 스크립트가 끝나거나 Ctrl+C 로 중단됐을 때 window 가 닫히지 않고 인터랙티브 셸로 떨어져 출력을 그대로 확인할 수 있습니다.
+
+```yaml
+name: OCI Create
+description: Oracle Cloud 인스턴스 생성 (용량 생길 때까지 polling)
+sessionNameHint: oci
+windows:
+  - name: create
+    command: ~/oci-create-instance.sh; exec $SHELL
+```
+
+세션이 메뉴바에 바로 뜨기 때문에, detach / re-attach 를 반복해도 스크립트는 계속 돌아갑니다.
 
 ## 설계 & 문서
 

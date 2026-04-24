@@ -8,6 +8,10 @@
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
+<p align="center">
+  <img src="docs/assets/screenshots/menu.png" alt="muxbar menu bar dropdown" width="420">
+</p>
+
 ## Features
 
 - **Session list** — All tmux sessions at a glance, sorted by attached first and creation date (latest first within each group)
@@ -160,6 +164,21 @@ windows:
 - Files starting with `_` are ignored (so `_example.yaml` stays as a reference)
 - Reload via menu: **New Session → Reload Templates**
 - Open the folder: **New Session → Edit Templates…**
+
+### Wrapping long-running scripts
+
+Templates are a good fit for scripts you want to keep running in the background — pollers, watchers, one-shot installers. Append `; exec $SHELL` so the window drops into an interactive shell when the script finishes (or you Ctrl+C it), instead of closing and losing the output.
+
+```yaml
+name: OCI Create
+description: Oracle Cloud instance create (polling until capacity is available)
+sessionNameHint: oci
+windows:
+  - name: create
+    command: ~/oci-create-instance.sh; exec $SHELL
+```
+
+The session shows up in the menu bar immediately — detach and re-attach any time, the script keeps running.
 
 ## Design & documentation
 
