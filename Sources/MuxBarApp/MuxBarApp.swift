@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import Core
 import Features
 import TerminalLauncher
@@ -6,6 +7,7 @@ import MuxLogging
 
 @main
 struct MuxBarApp: App {
+    @NSApplicationDelegateAdaptor(MuxBarAppDelegate.self) private var appDelegate
     @StateObject private var appState = AppState()
 
     init() {

@@ -60,6 +60,8 @@ cat > "$APP_PATH/Contents/Info.plist" <<EOF
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSSupportsAutomaticTermination</key><false/>
+    <key>NSSupportsSuddenTermination</key><false/>
     <key>NSHumanReadableCopyright</key><string>© 2026 kgd. MIT.</string>
 </dict>
 </plist>
