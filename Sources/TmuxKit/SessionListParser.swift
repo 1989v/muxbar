@@ -11,7 +11,7 @@ public enum SessionListParser {
         guard !trimmed.isEmpty else { return [] }
 
         return try trimmed.split(separator: "\n").map { line in
-            let parts = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            let parts = line.components(separatedBy: "@@@")
             guard parts.count == 6 else {
                 throw ParseError.malformedLine(String(line))
             }

@@ -12,12 +12,13 @@ public enum TmuxCommand: Sendable, Equatable {
     public var cliString: String {
         switch self {
         case .listSessions:
-            // tmux 는 format 문자열의 literal \t 를 변환하지 않으므로 실제 탭 문자(U+0009) 사용.
-            let fields = "#{session_name}\t#{session_attached}\t#{session_windows}\t#{session_created}\t#{session_activity}\t#{session_path}"
+            // raw 탭(U+0009) separator 는 GUI launch 환경에서 응답 시 underscore 로 둔갑하는
+            // 케이스 발견(2026-05-07) → 환경 무관하게 안전한 multi-char 마커로 교체.
+            let fields = "#{session_name}@@@#{session_attached}@@@#{session_windows}@@@#{session_created}@@@#{session_activity}@@@#{session_path}"
             return "list-sessions -F \"\(fields)\""
 
         case .listWindows(let session):
-            let fields = "#{window_id}\t#{window_index}\t#{window_name}\t#{window_panes}\t#{window_active}"
+            let fields = "#{window_id}@@@#{window_index}@@@#{window_name}@@@#{window_panes}@@@#{window_active}"
             return "list-windows -t \(quote(session)) -F \"\(fields)\""
 
         case .killSession(let name):

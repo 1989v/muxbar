@@ -4,7 +4,7 @@ import Core
 
 final class SessionListParserTests: XCTestCase {
     func test_singleLine_parsedCorrectly() throws {
-        let body = "dev\t1\t3\t1700000000\t1700001234\t/Users/kgd/msa"
+        let body = "dev@@@1@@@3@@@1700000000@@@1700001234@@@/Users/kgd/msa"
         let sessions = try SessionListParser.parse(body)
         XCTAssertEqual(sessions.count, 1)
 
@@ -19,12 +19,20 @@ final class SessionListParserTests: XCTestCase {
 
     func test_multipleLines() throws {
         let body = """
-        dev\t1\t3\t1700000000\t1700001234\t/Users/kgd/msa
-        api-test\t0\t1\t1700002000\t1700002500\t/Users/kgd/msa/api
+        dev@@@1@@@3@@@1700000000@@@1700001234@@@/Users/kgd/msa
+        api-test@@@0@@@1@@@1700002000@@@1700002500@@@/Users/kgd/msa/api
         """
         let sessions = try SessionListParser.parse(body)
         XCTAssertEqual(sessions.map(\.id), ["dev", "api-test"])
         XCTAssertEqual(sessions[1].isAttached, false)
+    }
+
+    func test_underscorePrefixedSessionName_doesNotBreakParser() throws {
+        // 회귀 방지: 세션 이름이 underscore 시작일 때도 정상 파싱되어야 함
+        let body = "_muxbar-ctl@@@1@@@1@@@1700000000@@@1700001234@@@/"
+        let sessions = try SessionListParser.parse(body)
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].id, "_muxbar-ctl")
     }
 
     func test_emptyBody_returnsEmpty() throws {
@@ -32,7 +40,7 @@ final class SessionListParserTests: XCTestCase {
     }
 
     func test_malformedLine_throws() {
-        let body = "malformed\tline"
+        let body = "malformed@@@line"
         XCTAssertThrowsError(try SessionListParser.parse(body))
     }
 }
