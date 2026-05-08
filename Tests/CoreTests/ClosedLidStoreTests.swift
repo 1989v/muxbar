@@ -1,7 +1,8 @@
 import XCTest
 @testable import Core
 
-final class FakeSessionProvider: SessionProvider {
+// 테스트 전용: @MainActor 컨텍스트에서만 접근하므로 race-free 가정.
+final class FakeSessionProvider: SessionProvider, @unchecked Sendable {
     var createdSessions: [(name: String, command: String?)] = []
     var killedSessions: [String] = []
     var shouldFailCreate = false
@@ -25,7 +26,8 @@ final class FakeSessionProvider: SessionProvider {
     }
 }
 
-final class FakePowerController: ClosedLidStore.PowerController {
+// 테스트 전용: @MainActor 컨텍스트에서만 접근하므로 race-free 가정.
+final class FakePowerController: ClosedLidStore.PowerController, @unchecked Sendable {
     var disableCalls = 0
     var enableCalls = 0
     var shouldThrowOnDisable: Error?
@@ -97,5 +99,60 @@ final class ClosedLidStoreTests: XCTestCase {
 
         XCTAssertEqual(power.enableCalls, 0)
         XCTAssertEqual(provider.killedSessions.count, 0)
+    }
+
+    func test_turnOn_withDuration_setsExpiresAt() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+        let before = Date()
+
+        await store.turnOn(duration: .seconds(3600), sessionProvider: provider)
+
+        guard case .on(let expiresAt) = store.state, let expiresAt else {
+            return XCTFail("expected .on(expiresAt:)")
+        }
+        XCTAssertGreaterThanOrEqual(expiresAt.timeIntervalSince(before), 3590)
+        XCTAssertLessThanOrEqual(expiresAt.timeIntervalSince(before), 3610)
+    }
+
+    func test_turnOn_sessionCreateFails_stateStillOn() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        provider.shouldFailCreate = true
+        let store = ClosedLidStore(power: power)
+
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        XCTAssertEqual(power.disableCalls, 1)
+        XCTAssertEqual(provider.createdSessions.count, 0)
+        XCTAssertEqual(store.state, .on(expiresAt: nil))
+    }
+
+    func test_forceOff_killFails_stateStillOff() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        provider.shouldFailKill = true
+        await store.forceOff(sessionProvider: provider)
+
+        XCTAssertEqual(power.enableCalls, 1)
+        XCTAssertEqual(store.state, .off)
+    }
+
+    func test_forceOff_userCancelled_stateStaysOn() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        power.shouldThrowOnEnable = PowerControl.Error.userCancelled
+        await store.forceOff(sessionProvider: provider)
+
+        XCTAssertEqual(power.enableCalls, 1)
+        XCTAssertEqual(store.state, .on(expiresAt: nil))  // CRITICAL #1 검증
+        XCTAssertEqual(provider.killedSessions.count, 0)  // kill 도 진행 안 됨
     }
 }

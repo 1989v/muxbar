@@ -10,7 +10,7 @@ public final class ClosedLidStore: ObservableObject {
         case off
         case on(expiresAt: Date?)  // nil = infinite
 
-        public var isOn: Bool { if case .off = self { return false } else { return true } }
+        public var isOn: Bool { self != .off }
     }
 
     public protocol PowerController: Sendable {
@@ -56,14 +56,18 @@ public final class ClosedLidStore: ObservableObject {
     }
 
     public func forceOff(sessionProvider: any SessionProvider) async {
-        guard state.isOn else { return }
+        guard state.isOn, !isToggling else { return }
         isToggling = true
         defer { isToggling = false }
 
         do {
             try await power.enableSystemSleep()
+        } catch PowerControl.Error.userCancelled {
+            logger.warning("enableSystemSleep cancelled by user — aborting forceOff (state stays ON)")
+            return
         } catch {
             logger.warning("enableSystemSleep failed: \(error.localizedDescription)")
+            // 비-cancel 실패: kill 진행 + state .off (UI 가 stuck 되지 않도록)
         }
 
         do {
@@ -71,7 +75,6 @@ public final class ClosedLidStore: ObservableObject {
         } catch {
             logger.warning("kill closed-lid session failed: \(error.localizedDescription)")
         }
-
         state = .off
     }
 }
