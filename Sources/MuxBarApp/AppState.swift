@@ -12,6 +12,7 @@ import HotKey
 public final class AppState: ObservableObject {
     public let sessionStore: SessionStore
     public let awakeStore: AwakeStore
+    public let closedLidStore: ClosedLidStore
     public let previewController: PreviewController
     public let terminalAdapter: TerminalAdapter?
     public let templateRunner: TemplateRunner
@@ -41,6 +42,7 @@ public final class AppState: ObservableObject {
         self.previewController = PreviewController()
         self.sessionStore = SessionStore()
         self.awakeStore = AwakeStore()
+        self.closedLidStore = ClosedLidStore(power: DefaultPowerController())
         self.templateRunner = TemplateRunner()
         self.templateStore = TemplateStore()
         self.hotKeyCenter = HotKeyCenter()
@@ -102,6 +104,27 @@ public final class AppState: ObservableObject {
         guard let client = controlClient else { return }
         Task {
             await awakeStore.toggle(in: sessionStore, via: client)
+        }
+    }
+
+    public func turnOnClosedLid(duration: Duration?) {
+        guard let client = controlClient else {
+            sessionStore.apply(error: "tmux not connected — connect first")
+            return
+        }
+        Task {
+            await closedLidStore.turnOn(duration: duration, sessionProvider: client)
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            await sessionStore.refreshCaffeinate(from: client)
+        }
+    }
+
+    public func turnOffClosedLid() {
+        guard let client = controlClient else { return }
+        Task {
+            await closedLidStore.forceOff(sessionProvider: client)
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            await sessionStore.refreshCaffeinate(from: client)
         }
     }
 

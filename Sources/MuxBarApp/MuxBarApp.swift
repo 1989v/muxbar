@@ -66,6 +66,17 @@ struct MuxBarApp: App {
 
             Divider()
 
+            // 2b. Closed-lid mode
+            ClosedLidMenuItem(
+                store: appState.closedLidStore,
+                onTurnOn: { duration in appState.turnOnClosedLid(duration: duration) },
+                onTurnOff: { appState.turnOffClosedLid() }
+            )
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+
+            Divider()
+
             // 3. New Session (템플릿 서브메뉴)
             NewSessionMenu(
                 store: appState.templateStore,
