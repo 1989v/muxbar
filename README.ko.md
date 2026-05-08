@@ -19,6 +19,7 @@
 - **Kill** — 메뉴에서 바로 세션 종료
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
+- **Closed-lid mode** — MacBook 덮개를 닫고도 시스템 sleep 없이 백그라운드 작업을 진행할 수 있게 하는 토글. 클릭 → 지속 시간 선택 (1h / 4h / 8h / ∞) → 관리자 비밀번호 입력 (Touch ID 지원). 자동 해제: 시간 만료 / AC 어댑터 분리 / lid 열림 / muxbar 종료. `pmset -a disablesleep 1` + `caffeinate -is` 결합. AppleScript admin prompt 사용 — helper 설치/Apple Developer 멤버십 불필요. Keep Awake 와 독립 토글, 활성 시 메뉴바 아이콘 빨간 🔒 로 표시.
 - **템플릿** — 빌트인 + 사용자 YAML 템플릿. New Session 에서 선택
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
 - **Open at Login** — `.app` 번들로 설치된 경우 macOS Login Item 등록 (Settings 하위)

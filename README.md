@@ -19,6 +19,7 @@
 - **Kill** — Drop a session from the menu
 - **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
+- **Closed-lid mode** — Prevents system sleep even when the MacBook lid is closed. Click → choose duration (1h / 4h / 8h / ∞) → enter admin password (Touch ID supported). Auto-disables on timer expiry, AC adapter unplug, lid open, or muxbar quit. Combines `pmset -a disablesleep 1` + `caffeinate -is`. Uses an AppleScript admin prompt — no helper installer or Apple Developer Program needed. Independent toggle from Keep Awake; menubar icon turns red 🔒 while active.
 - **Templates** — Built-in and user-defined session layouts (YAML). New Session → pick a template.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
 - **Open at Login** — Registers as a macOS Login Item under Settings (when installed as a bundled `.app`).
