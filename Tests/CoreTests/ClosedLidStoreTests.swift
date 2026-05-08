@@ -155,4 +155,31 @@ final class ClosedLidStoreTests: XCTestCase {
         XCTAssertEqual(store.state, .on(expiresAt: nil))  // CRITICAL #1 검증
         XCTAssertEqual(provider.killedSessions.count, 0)  // kill 도 진행 안 됨
     }
+
+    func test_turnOn_withShortDuration_autoForceOffAfterExpiry() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        await store.turnOn(duration: .milliseconds(100), sessionProvider: provider)
+        XCTAssertTrue(store.state.isOn)
+
+        try await Task.sleep(nanoseconds: 250_000_000)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertEqual(power.enableCalls, 1)
+    }
+
+    func test_forceOff_cancelsPendingTimer() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        await store.turnOn(duration: .milliseconds(500), sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider)
+
+        try await Task.sleep(nanoseconds: 700_000_000)
+
+        XCTAssertEqual(power.enableCalls, 1)  // timer 가 또 forceOff 호출하면 안 됨
+    }
 }

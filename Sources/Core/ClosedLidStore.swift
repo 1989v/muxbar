@@ -23,6 +23,7 @@ public final class ClosedLidStore: ObservableObject {
 
     private let power: any PowerController
     private let logger = MuxLogging.logger("Core.ClosedLidStore")
+    private var expirationTask: Task<Void, Never>?
 
     public init(power: any PowerController) {
         self.power = power
@@ -53,12 +54,28 @@ public final class ClosedLidStore: ObservableObject {
             Date().addingTimeInterval(TimeInterval(d.components.seconds))
         }
         state = .on(expiresAt: expiresAt)
+
+        if let duration {
+            expirationTask = Task { [weak self, weak sp = sessionProvider as AnyObject] in
+                let nanos = UInt64(duration.components.seconds) * 1_000_000_000
+                    + UInt64(duration.components.attoseconds / 1_000_000_000)
+                try? await Task.sleep(nanoseconds: nanos)
+                guard !Task.isCancelled else { return }
+                guard let self else { return }
+                if let sp = sp as? (any SessionProvider) {
+                    await self.forceOff(sessionProvider: sp)
+                }
+            }
+        }
     }
 
     public func forceOff(sessionProvider: any SessionProvider) async {
         guard state.isOn, !isToggling else { return }
         isToggling = true
         defer { isToggling = false }
+
+        expirationTask?.cancel()
+        expirationTask = nil
 
         do {
             try await power.enableSystemSleep()
