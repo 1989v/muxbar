@@ -16,6 +16,7 @@ public protocol PowerSourceMonitor: AnyObject {
 public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var handler: (@MainActor () -> Void)?
+    private var contextBox: MonitorWeakBox<IOKitPowerSourceMonitor>?
 
     public init() {}
 
@@ -23,16 +24,20 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
     public func onACDisconnect(_ handler: @escaping @MainActor () -> Void) {
         stop()  // clean up any prior subscription
         self.handler = handler
+
         let box = MonitorWeakBox(self)
-        let context = Unmanaged.passRetained(box).toOpaque()
+        self.contextBox = box
+        let context = Unmanaged.passUnretained(box).toOpaque()
+
+        // IOPSNotificationCreateRunLoopSource must be attached to a run loop;
+        // main run loop delivers on main thread.
         let src = IOPSNotificationCreateRunLoopSource({ ctx in
             guard let ctx else { return }
-            let box = Unmanaged<MonitorWeakBox<IOKitPowerSourceMonitor>>.fromOpaque(ctx).takeRetainedValue()
+            let box = Unmanaged<MonitorWeakBox<IOKitPowerSourceMonitor>>.fromOpaque(ctx).takeUnretainedValue()
             DispatchQueue.main.async { box.value?.checkAndFireIfDisconnected() }
         }, context)?.takeRetainedValue()
         guard let src else { return }
         self.runLoopSource = src
-        // IOPSNotificationCreateRunLoopSource must be attached to a run loop; main run loop delivers on main thread.
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .defaultMode)
     }
 
@@ -45,10 +50,14 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
 
     @MainActor
     public func stop() {
+        // Remove from run loop FIRST so no new callbacks get scheduled.
         if let src = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), src, .defaultMode)
         }
         runLoopSource = nil
+        // Drop the box. Any in-flight DispatchQueue.main.async closure still holds it via capture
+        // until it runs; callback delivery is fenced by IOKit run-loop-source removal above.
+        contextBox = nil
         handler = nil
     }
 

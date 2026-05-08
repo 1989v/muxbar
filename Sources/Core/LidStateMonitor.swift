@@ -18,6 +18,7 @@ public final class IOKitLidStateMonitor: LidStateMonitor {
     private var service: io_service_t = 0
     private var handler: (@MainActor () -> Void)?
     private var lastClosed: Bool = false
+    private var contextBox: MonitorWeakBox<IOKitLidStateMonitor>?
 
     public init() {}
 
@@ -38,13 +39,15 @@ public final class IOKitLidStateMonitor: LidStateMonitor {
         self.service = svc
 
         let box = MonitorWeakBox(self)
-        let context = Unmanaged.passRetained(box).toOpaque()
+        self.contextBox = box
+        let context = Unmanaged.passUnretained(box).toOpaque()
+
         var note: io_object_t = 0
         let kr = IOServiceAddInterestNotification(
             port, svc, kIOGeneralInterest,
             { (ctx, _, _, _) in
                 guard let ctx else { return }
-                let box = Unmanaged<MonitorWeakBox<IOKitLidStateMonitor>>.fromOpaque(ctx).takeRetainedValue()
+                let box = Unmanaged<MonitorWeakBox<IOKitLidStateMonitor>>.fromOpaque(ctx).takeUnretainedValue()
                 DispatchQueue.main.async { box.value?.recheck() }
             },
             context, &note
@@ -67,10 +70,14 @@ public final class IOKitLidStateMonitor: LidStateMonitor {
 
     @MainActor
     public func stop() {
+        // Release notification FIRST so no new callbacks get scheduled.
         if notification != 0 { IOObjectRelease(notification); notification = 0 }
         if service != 0 { IOObjectRelease(service); service = 0 }
         if let port = notifyPort { IONotificationPortDestroy(port) }
         notifyPort = nil
+        // Drop the box. Any in-flight DispatchQueue.main.async closure still holds it via capture
+        // until it runs; callback delivery is fenced by IOKit notification removal above.
+        contextBox = nil
         handler = nil
     }
 
