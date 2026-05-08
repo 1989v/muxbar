@@ -43,6 +43,36 @@ final class FakePowerController: ClosedLidStore.PowerController, @unchecked Send
     }
 }
 
+final class FakePowerSourceMonitor: PowerSourceMonitor, @unchecked Sendable {
+    var startedHandler: (@MainActor () -> Void)?
+    var stopped = false
+
+    @MainActor
+    func onACDisconnect(_ handler: @escaping @MainActor () -> Void) {
+        startedHandler = handler
+    }
+    @MainActor
+    func stop() { stopped = true; startedHandler = nil }
+
+    @MainActor
+    func fire() { startedHandler?() }
+}
+
+final class FakeLidStateMonitor: LidStateMonitor, @unchecked Sendable {
+    var startedHandler: (@MainActor () -> Void)?
+    var stopped = false
+
+    @MainActor
+    func onLidOpen(_ handler: @escaping @MainActor () -> Void) {
+        startedHandler = handler
+    }
+    @MainActor
+    func stop() { stopped = true; startedHandler = nil }
+
+    @MainActor
+    func fire() { startedHandler?() }
+}
+
 @MainActor
 final class ClosedLidStoreTests: XCTestCase {
     func test_initialState_isOff() {
@@ -181,5 +211,60 @@ final class ClosedLidStoreTests: XCTestCase {
         try await Task.sleep(nanoseconds: 700_000_000)
 
         XCTAssertEqual(power.enableCalls, 1)  // timer 가 또 forceOff 호출하면 안 됨
+    }
+
+    func test_turnOn_subscribesACAndLidMonitors() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let acMon = FakePowerSourceMonitor()
+        let lidMon = FakeLidStateMonitor()
+        let store = ClosedLidStore(power: power, acMonitor: acMon, lidMonitor: lidMon)
+
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        XCTAssertNotNil(acMon.startedHandler)
+        XCTAssertNotNil(lidMon.startedHandler)
+    }
+
+    func test_acDisconnect_triggersForceOff() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let acMon = FakePowerSourceMonitor()
+        let lidMon = FakeLidStateMonitor()
+        let store = ClosedLidStore(power: power, acMonitor: acMon, lidMonitor: lidMon)
+
+        await store.turnOn(duration: nil, sessionProvider: provider)
+        acMon.fire()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(store.state, .off)
+    }
+
+    func test_lidOpen_triggersForceOff() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let acMon = FakePowerSourceMonitor()
+        let lidMon = FakeLidStateMonitor()
+        let store = ClosedLidStore(power: power, acMonitor: acMon, lidMonitor: lidMon)
+
+        await store.turnOn(duration: nil, sessionProvider: provider)
+        lidMon.fire()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(store.state, .off)
+    }
+
+    func test_forceOff_stopsBothMonitors() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let acMon = FakePowerSourceMonitor()
+        let lidMon = FakeLidStateMonitor()
+        let store = ClosedLidStore(power: power, acMonitor: acMon, lidMonitor: lidMon)
+
+        await store.turnOn(duration: nil, sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider)
+
+        XCTAssertTrue(acMon.stopped)
+        XCTAssertTrue(lidMon.stopped)
     }
 }
