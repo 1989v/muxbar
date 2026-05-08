@@ -5,24 +5,37 @@ import Core
 public struct MenuBarIcon: View {
     @ObservedObject public var sessionStore: SessionStore
     @ObservedObject public var awakeStore: AwakeStore
+    @ObservedObject public var closedLidStore: ClosedLidStore
 
-    public init(sessionStore: SessionStore, awakeStore: AwakeStore) {
+    public init(
+        sessionStore: SessionStore,
+        awakeStore: AwakeStore,
+        closedLidStore: ClosedLidStore
+    ) {
         self.sessionStore = sessionStore
         self.awakeStore = awakeStore
+        self.closedLidStore = closedLidStore
     }
 
     public var body: some View {
-        HStack(spacing: 3) {
-            if let nsImage = coloredSymbol() {
-                Image(nsImage: nsImage)
-            } else {
-                // fallback
-                Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
-            }
-            if sessionCount > 0 {
-                Text("\(sessionCount)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .monospacedDigit()
+        if closedLidStore.state.isOn {
+            // closed-lid ON: 빨간 lock 우선 (Keep Awake ON 여부와 무관)
+            Image(systemName: "lock.fill")
+                .renderingMode(.template)
+                .foregroundColor(.red)
+        } else {
+            HStack(spacing: 3) {
+                if let nsImage = coloredSymbol() {
+                    Image(nsImage: nsImage)
+                } else {
+                    // fallback
+                    Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
+                }
+                if sessionCount > 0 {
+                    Text("\(sessionCount)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .monospacedDigit()
+                }
             }
         }
     }

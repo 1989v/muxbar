@@ -26,7 +26,8 @@ struct MuxBarApp: App {
         } label: {
             MenuBarIcon(
                 sessionStore: appState.sessionStore,
-                awakeStore: appState.awakeStore
+                awakeStore: appState.awakeStore,
+                closedLidStore: appState.closedLidStore
             )
         }
         .menuBarExtraStyle(.window)
