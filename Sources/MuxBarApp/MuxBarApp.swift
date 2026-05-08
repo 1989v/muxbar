@@ -66,14 +66,12 @@ struct MuxBarApp: App {
 
             Divider()
 
-            // 2b. Closed-lid mode
+            // 2b. Closed-lid mode (KeepAwakeMenuItem 와 동일하게 외부 padding 없음 — 내부에 이미 padding 보유)
             ClosedLidMenuItem(
                 store: appState.closedLidStore,
                 onTurnOn: { duration in appState.turnOnClosedLid(duration: duration) },
                 onTurnOff: { appState.turnOffClosedLid() }
             )
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
 
             Divider()
 
