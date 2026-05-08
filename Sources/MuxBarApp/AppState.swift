@@ -128,6 +128,11 @@ public final class AppState: ObservableObject {
         }
     }
 
+    public func turnOffClosedLidAndWait() async {
+        guard let client = controlClient else { return }
+        await closedLidStore.forceOff(sessionProvider: client)
+    }
+
     public func startPreview(for session: TmuxSession) {
         guard let client = controlClient else { return }
         previewSession = session

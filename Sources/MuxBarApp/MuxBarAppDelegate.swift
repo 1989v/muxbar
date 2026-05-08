@@ -1,9 +1,11 @@
 import AppKit
+import Core
 import MuxLogging
 
 @MainActor
 final class MuxBarAppDelegate: NSObject, NSApplicationDelegate {
     private let logger = MuxLogging.logger("AppDelegate")
+    weak var appState: AppState?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // LSUIElement 에이전트는 idle/시스템 압박 시 자동 종료 대상이 됨.
@@ -26,6 +28,18 @@ final class MuxBarAppDelegate: NSObject, NSApplicationDelegate {
                 MuxLogging.logger("AppDelegate").info("\(label)")
             }
         }
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let appState, appState.closedLidStore.state.isOn else {
+            return .terminateNow
+        }
+        logger.critical("closed-lid ON — cleanup before terminate")
+        Task { @MainActor in
+            await appState.turnOffClosedLidAndWait()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 
     func applicationWillTerminate(_ notification: Notification) {

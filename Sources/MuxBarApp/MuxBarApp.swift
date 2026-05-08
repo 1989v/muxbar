@@ -19,6 +19,7 @@ struct MuxBarApp: App {
         MenuBarExtra {
             menuContent
                 .onAppear {
+                    appDelegate.appState = appState
                     Task { @MainActor in
                         await appState.ensureBootstrapped()
                     }
