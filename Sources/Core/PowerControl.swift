@@ -13,8 +13,8 @@ public enum PowerControl {
     }
 
     static func mapError(_ dict: NSDictionary) -> Error {
-        let code = (dict["NSAppleScriptErrorNumber"] as? NSNumber)?.intValue ?? 0
-        let msg = dict["NSAppleScriptErrorMessage"] as? String ?? "unknown"
+        let code = (dict[NSAppleScript.errorNumber] as? NSNumber)?.intValue ?? 0
+        let msg = dict[NSAppleScript.errorMessage] as? String ?? "unknown"
         return code == -128 ? .userCancelled : .scriptFailed(msg)
     }
 
@@ -30,6 +30,7 @@ public enum PowerControl {
 
     @MainActor
     private static func run(disable: Bool) throws {
+        // NOTE: blocks main thread during password dialog (NSAppleScript runs nested run loop).
         let source = buildScript(disable: disable)
         guard let script = NSAppleScript(source: source) else {
             throw Error.scriptFailed("AppleScript init failed")
