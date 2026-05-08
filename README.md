@@ -29,6 +29,7 @@
 - 0 sessions: plain coffee cup
 - Active sessions: cup + session count badge
 - Keep Awake active: steaming cup, orange tint
+- Closed-lid mode active: red lock icon (priority over Keep Awake)
 
 ## Menu layout
 
@@ -45,6 +46,8 @@
   │    /var/log                  │
   ├──────────────────────────────┤
   │ ☕  Keep Awake          ON    │   ← toggle (⌘⇧A)
+  ├──────────────────────────────┤
+  │ 🔒  Closed-lid mode     OFF   │   ← prevent sleep on lid close
   ├──────────────────────────────┤
   │ ⊞  New Session          ▸    │   ← templates submenu
   ├──────────────────────────────┤

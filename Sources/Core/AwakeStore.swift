@@ -29,7 +29,7 @@ public final class AwakeStore: ObservableObject {
         let status = store.caffeinateStatus
         guard status.isActive else { return .none }
         let hasMuxbar = status.tmuxSessions.contains(Self.awakeSessionName)
-        let hasExternal = status.tmuxSessions.contains { $0 != Self.awakeSessionName } || status.systemActive
+        let hasExternal = status.tmuxSessions.contains { $0 != Self.awakeSessionName && $0 != ClosedLidStore.sessionName } || status.systemActive
         if hasMuxbar && hasExternal { return .both }
         if hasMuxbar { return .muxbar }
         return .external
@@ -61,7 +61,7 @@ public final class AwakeStore: ObservableObject {
         let status = store.caffeinateStatus
 
         if status.isActive {
-            for sessionName in status.tmuxSessions {
+            for sessionName in status.tmuxSessions where sessionName != ClosedLidStore.sessionName {
                 do {
                     try await provider.kill(sessionName: sessionName)
                 } catch {
