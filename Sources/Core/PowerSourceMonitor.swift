@@ -2,6 +2,11 @@ import Foundation
 import IOKit
 import IOKit.ps
 
+private final class MonitorWeakBox<T: AnyObject> {
+    weak var value: T?
+    init(_ v: T) { value = v }
+}
+
 public protocol PowerSourceMonitor: AnyObject {
     /// AC 어댑터 분리(AC → Battery transition) 시 1회 호출. 자동으로 stop. 재구독 필요시 다시 호출.
     @MainActor func onACDisconnect(_ handler: @escaping @MainActor () -> Void)
@@ -16,15 +21,18 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
 
     @MainActor
     public func onACDisconnect(_ handler: @escaping @MainActor () -> Void) {
+        stop()  // clean up any prior subscription
         self.handler = handler
-        let context = Unmanaged.passUnretained(self).toOpaque()
+        let box = MonitorWeakBox(self)
+        let context = Unmanaged.passRetained(box).toOpaque()
         let src = IOPSNotificationCreateRunLoopSource({ ctx in
             guard let ctx else { return }
-            let me = Unmanaged<IOKitPowerSourceMonitor>.fromOpaque(ctx).takeUnretainedValue()
-            DispatchQueue.main.async { me.checkAndFireIfDisconnected() }
+            let box = Unmanaged<MonitorWeakBox<IOKitPowerSourceMonitor>>.fromOpaque(ctx).takeRetainedValue()
+            DispatchQueue.main.async { box.value?.checkAndFireIfDisconnected() }
         }, context)?.takeRetainedValue()
         guard let src else { return }
         self.runLoopSource = src
+        // IOPSNotificationCreateRunLoopSource must be attached to a run loop; main run loop delivers on main thread.
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .defaultMode)
     }
 
@@ -49,12 +57,13 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
               let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef]
         else { return true }
         for src in sources {
-            guard let desc = IOPSGetPowerSourceDescription(info, src)?.takeUnretainedValue() as? [String: Any]
+            guard let desc = IOPSGetPowerSourceDescription(info, src)?.takeUnretainedValue() as? [String: Any],
+                  let type = desc[kIOPSTypeKey] as? String,
+                  type == kIOPSInternalBatteryType,
+                  let state = desc[kIOPSPowerSourceStateKey] as? String
             else { continue }
-            if let state = desc[kIOPSPowerSourceStateKey] as? String {
-                return state == kIOPSACPowerValue
-            }
+            return state == kIOPSACPowerValue
         }
-        return true
+        return true  // no internal battery found — laptop without battery (Mac mini etc.) — assume AC
     }
 }

@@ -1,6 +1,11 @@
 import Foundation
 import IOKit
 
+private final class MonitorWeakBox<T: AnyObject> {
+    weak var value: T?
+    init(_ v: T) { value = v }
+}
+
 public protocol LidStateMonitor: AnyObject {
     /// lid가 닫힘→열림 transition 감지 시 1회 호출. 자동 stop.
     @MainActor func onLidOpen(_ handler: @escaping @MainActor () -> Void)
@@ -18,10 +23,12 @@ public final class IOKitLidStateMonitor: LidStateMonitor {
 
     @MainActor
     public func onLidOpen(_ handler: @escaping @MainActor () -> Void) {
+        stop()  // clean up any prior subscription
         self.handler = handler
         self.lastClosed = readClamshellClosed() ?? false
 
         guard let port = IONotificationPortCreate(kIOMainPortDefault) else { return }
+        // Dispatch queue avoids menu-open run-loop mode blocking that CFRunLoopAddSource(.defaultMode) would suffer.
         IONotificationPortSetDispatchQueue(port, DispatchQueue.main)
         self.notifyPort = port
 
@@ -30,14 +37,15 @@ public final class IOKitLidStateMonitor: LidStateMonitor {
         guard svc != 0 else { return }
         self.service = svc
 
-        let context = Unmanaged.passUnretained(self).toOpaque()
+        let box = MonitorWeakBox(self)
+        let context = Unmanaged.passRetained(box).toOpaque()
         var note: io_object_t = 0
         let kr = IOServiceAddInterestNotification(
             port, svc, kIOGeneralInterest,
             { (ctx, _, _, _) in
                 guard let ctx else { return }
-                let me = Unmanaged<IOKitLidStateMonitor>.fromOpaque(ctx).takeUnretainedValue()
-                DispatchQueue.main.async { me.recheck() }
+                let box = Unmanaged<MonitorWeakBox<IOKitLidStateMonitor>>.fromOpaque(ctx).takeRetainedValue()
+                DispatchQueue.main.async { box.value?.recheck() }
             },
             context, &note
         )
