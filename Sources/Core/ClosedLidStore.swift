@@ -56,15 +56,17 @@ public final class ClosedLidStore: ObservableObject {
         state = .on(expiresAt: expiresAt)
 
         if let duration {
-            expirationTask = Task { [weak self, weak sp = sessionProvider as AnyObject] in
+            expirationTask = Task { [weak self, sessionProvider] in
                 let nanos = UInt64(duration.components.seconds) * 1_000_000_000
+                    // attoseconds(10⁻¹⁸ s) ÷ 1e9 = nanoseconds (sub-second 분량).
                     + UInt64(duration.components.attoseconds / 1_000_000_000)
-                try? await Task.sleep(nanoseconds: nanos)
-                guard !Task.isCancelled else { return }
-                guard let self else { return }
-                if let sp = sp as? (any SessionProvider) {
-                    await self.forceOff(sessionProvider: sp)
+                do {
+                    try await Task.sleep(nanoseconds: nanos)
+                } catch {
+                    return  // cancelled
                 }
+                guard let self else { return }
+                await self.forceOff(sessionProvider: sessionProvider)
             }
         }
     }
@@ -76,6 +78,8 @@ public final class ClosedLidStore: ObservableObject {
 
         expirationTask?.cancel()
         expirationTask = nil
+        // TODO(Task5): userCancelled 경로에서 timer 가 죽은 채 state .on 으로 남으면
+        // 자동 만료가 더 이상 발화하지 않음. Task 5 의 4중 자동해제 통합과 함께 재무장 처리.
 
         do {
             try await power.enableSystemSleep()
