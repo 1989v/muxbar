@@ -9,8 +9,6 @@ public struct ClosedLidMenuItem: View {
     @State private var showingPicker = false
     @State private var now = Date()
 
-    private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     public init(
         store: ClosedLidStore,
         onTurnOn: @escaping (Duration?) -> Void,
@@ -52,7 +50,9 @@ public struct ClosedLidMenuItem: View {
         .popover(isPresented: $showingPicker, arrowEdge: .leading) {
             durationPicker
         }
-        .onReceive(tick) { now = $0 }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { date in
+            if store.state.isOn { now = date }
+        }
     }
 
     private var stateLabel: String {
@@ -72,7 +72,7 @@ public struct ClosedLidMenuItem: View {
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Duration").font(.caption).foregroundStyle(.secondary)
-            ForEach(durationOptions, id: \.label) { opt in
+            ForEach(Self.durationOptions, id: \.label) { opt in
                 Button(opt.label) {
                     showingPicker = false
                     onTurnOn(opt.duration)
@@ -85,12 +85,10 @@ public struct ClosedLidMenuItem: View {
         .padding(8)
     }
 
-    private var durationOptions: [(label: String, duration: Duration?)] {
-        [
-            ("1 hour", .seconds(3600)),
-            ("4 hours", .seconds(14400)),
-            ("8 hours", .seconds(28800)),
-            ("∞ (until manual off)", nil),
-        ]
-    }
+    private static let durationOptions: [(label: String, duration: Duration?)] = [
+        ("1 hour", .seconds(3600)),
+        ("4 hours", .seconds(14400)),
+        ("8 hours", .seconds(28800)),
+        ("∞ (until manual off)", nil),
+    ]
 }
