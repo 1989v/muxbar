@@ -42,3 +42,10 @@ public enum PowerControl {
         }
     }
 }
+
+/// ClosedLidStore.PowerController 어댑터.
+public struct DefaultPowerController: ClosedLidStore.PowerController {
+    public init() {}
+    public func disableSystemSleep() async throws { try await PowerControl.disableSystemSleep() }
+    public func enableSystemSleep() async throws { try await PowerControl.enableSystemSleep() }
+}
