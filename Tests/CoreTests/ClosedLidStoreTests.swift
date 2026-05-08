@@ -254,6 +254,28 @@ final class ClosedLidStoreTests: XCTestCase {
         XCTAssertEqual(store.state, .off)
     }
 
+    func test_forceOff_userCancelled_acMonitorRemainsArmed() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let acMon = FakePowerSourceMonitor()
+        let lidMon = FakeLidStateMonitor()
+        let store = ClosedLidStore(power: power, acMonitor: acMon, lidMonitor: lidMon)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        power.shouldThrowOnEnable = PowerControl.Error.userCancelled
+        await store.forceOff(sessionProvider: provider)
+
+        // monitor 재무장 확인 — handler 다시 등록됨
+        XCTAssertNotNil(acMon.startedHandler)
+        XCTAssertNotNil(lidMon.startedHandler)
+        // state 는 ON 유지
+        XCTAssertEqual(store.state, .on(expiresAt: nil))
+
+        // 재무장된 AC monitor 가 fire 하면 다시 forceOff 시도 (이번엔 power.shouldThrowOnEnable 그대로
+        // userCancelled 라 또 cancel — 무한 루프 같지만 forceOff 가 내부 guard 로 멈춤)
+        // → 검증은 monitor 재무장만으로 충분.
+    }
+
     func test_forceOff_stopsBothMonitors() async {
         let power = FakePowerController()
         let provider = FakeSessionProvider()

@@ -93,12 +93,16 @@ public final class ClosedLidStore: ObservableObject {
             return
         }
         // sessionProvider 가 deallocate → pmset 만 복원, state .off.
+        guard state.isOn, !isToggling else { return }
+        isToggling = true
+        defer { isToggling = false }
+
         try? await power.enableSystemSleep()
-        state = .off
         acMonitor.stop()
         lidMonitor.stop()
         expirationTask?.cancel()
         expirationTask = nil
+        state = .off
         lastSessionProvider = nil
     }
 
@@ -115,10 +119,11 @@ public final class ClosedLidStore: ObservableObject {
         do {
             try await power.enableSystemSleep()
         } catch PowerControl.Error.userCancelled {
-            logger.warning("enableSystemSleep cancelled by user — aborting forceOff (state stays ON)")
-            // 주의: monitors/timer 가 모두 stop 됐음. 자동 OFF 가 지금부터 발화 안 됨.
-            // Spec 의도와 부합 (사용자가 명시적 cancel). 단 향후 enhancement 로 monitor/timer
-            // 재무장 검토 가능.
+            logger.warning("enableSystemSleep cancelled by user — aborting forceOff, monitors 재무장")
+            // 사용자 cancel 은 "OFF 안 함" 의도이지 자동해제 비활성 의도가 아님 → AC/lid monitor 재구독.
+            // timer 는 expiresAt 잔여 계산 복잡 + 사용 빈도 낮아 후속 enhancement 로 미루고 여기선 미재무장.
+            acMonitor.onACDisconnect { [weak self] in Task { await self?.forceOffViaTrigger() } }
+            lidMonitor.onLidOpen     { [weak self] in Task { await self?.forceOffViaTrigger() } }
             return
         } catch {
             logger.warning("enableSystemSleep failed: \(error.localizedDescription)")
