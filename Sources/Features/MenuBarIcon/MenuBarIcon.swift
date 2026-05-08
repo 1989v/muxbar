@@ -20,9 +20,13 @@ public struct MenuBarIcon: View {
     public var body: some View {
         if closedLidStore.state.isOn {
             // closed-lid ON: 빨간 lock 우선 (Keep Awake ON 여부와 무관)
-            Image(systemName: "lock.fill")
-                .renderingMode(.template)
-                .foregroundColor(.red)
+            // SwiftUI .foregroundColor(.red) 는 NSStatusItem 컨텍스트에서 system tint 로 override 됨.
+            // awake 오렌지와 동일하게 NSImage + paletteColors + isTemplate=false 경로 사용.
+            if let img = paletteSymbol("lock.fill", color: .systemRed) {
+                Image(nsImage: img)
+            } else {
+                Image(systemName: "lock.fill")  // fallback
+            }
         } else {
             HStack(spacing: 3) {
                 if let nsImage = coloredSymbol() {
@@ -58,6 +62,20 @@ public struct MenuBarIcon: View {
         } else {
             image.isTemplate = true   // 비활성 시 메뉴바 자동 다크/라이트 대응
         }
+        return image
+    }
+
+    /// 임의의 SF Symbol 을 지정 색상으로 렌더한 NSImage 를 반환한다.
+    /// isTemplate=false 로 설정해 메뉴바 시스템 tint 가 색상을 덮어쓰지 않도록 한다.
+    private func paletteSymbol(_ name: String, color: NSColor) -> NSImage? {
+        guard var image = NSImage(systemSymbolName: name, accessibilityDescription: name) else {
+            return nil
+        }
+        let config = NSImage.SymbolConfiguration(paletteColors: [color])
+        if let colored = image.withSymbolConfiguration(config) {
+            image = colored
+        }
+        image.isTemplate = false
         return image
     }
 
