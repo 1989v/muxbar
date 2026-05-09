@@ -80,7 +80,7 @@ public final class AppState: ObservableObject {
                 }
             }
         } catch {
-            sessionStore.apply(error: "bootstrap failed: \(error.localizedDescription)")
+            sessionStore.apply(error: L.errorBootstrapFailed(error.localizedDescription))
             sessionStore.apply(connectionState: .failed(reason: error.localizedDescription))
             logger.error("bootstrap failed: \(error.localizedDescription)")
         }
@@ -88,14 +88,14 @@ public final class AppState: ObservableObject {
 
     public func attach(_ session: TmuxSession, using app: TerminalApp = .terminal) {
         guard let adapter = terminalAdapter else {
-            sessionStore.apply(error: "tmux binary not found")
+            sessionStore.apply(error: L.errorTmuxBinaryNotFound)
             return
         }
         Task {
             do {
                 try await adapter.attach(sessionName: session.id, using: app)
             } catch {
-                sessionStore.apply(error: "attach failed: \(error.localizedDescription)")
+                sessionStore.apply(error: L.errorAttachFailed(error.localizedDescription))
             }
         }
     }
@@ -116,7 +116,7 @@ public final class AppState: ObservableObject {
 
     public func turnOnClosedLid(duration: Duration?) {
         guard let client = controlClient else {
-            sessionStore.apply(error: "tmux not connected — connect first")
+            sessionStore.apply(error: L.errorTmuxNotConnected)
             return
         }
         Task {
@@ -163,7 +163,7 @@ public final class AppState: ObservableObject {
                 sessionStore.apply(error: nil)
                 _ = sessionName
             } catch {
-                sessionStore.apply(error: "template run failed: \(error.localizedDescription)")
+                sessionStore.apply(error: L.errorTemplateRunFailed(error.localizedDescription))
             }
         }
     }

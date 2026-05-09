@@ -49,7 +49,11 @@
 "settings.relaunch.cancel"         = "Cancel";
 
 // errors
-"error.tmuxNotConnected"  = "tmux not connected — connect first";
+"error.tmuxNotConnected"      = "tmux not connected — connect first";
+"error.tmuxBinaryNotFound"    = "tmux binary not found";
+"error.bootstrapFailed"       = "bootstrap failed: %@";
+"error.attachFailed"          = "attach failed: %@";
+"error.templateRunFailed"     = "template run failed: %@";
 
 // menubar tooltip
 "tooltip.idle"            = "muxbar — tmux session manager";

@@ -56,11 +56,21 @@ public enum L {
     public static var settingsRelaunchCancel: String           { lookup("settings.relaunch.cancel") }
 
     // MARK: error / tooltip / app
-    public static var errorTmuxNotConnected: String { lookup("error.tmuxNotConnected") }
-    public static var tooltipIdle: String           { lookup("tooltip.idle") }
-    public static var tooltipKeepAwake: String      { lookup("tooltip.keepAwake") }
-    public static var tooltipClosedLid: String      { lookup("tooltip.closedLid") }
-    public static var appName: String               { lookup("app.name") }
+    public static var errorTmuxNotConnected: String   { lookup("error.tmuxNotConnected") }
+    public static var errorTmuxBinaryNotFound: String { lookup("error.tmuxBinaryNotFound") }
+    public static func errorBootstrapFailed(_ desc: String) -> String {
+        String(format: lookup("error.bootstrapFailed"), desc)
+    }
+    public static func errorAttachFailed(_ desc: String) -> String {
+        String(format: lookup("error.attachFailed"), desc)
+    }
+    public static func errorTemplateRunFailed(_ desc: String) -> String {
+        String(format: lookup("error.templateRunFailed"), desc)
+    }
+    public static var tooltipIdle: String             { lookup("tooltip.idle") }
+    public static var tooltipKeepAwake: String        { lookup("tooltip.keepAwake") }
+    public static var tooltipClosedLid: String        { lookup("tooltip.closedLid") }
+    public static var appName: String                 { lookup("app.name") }
 
     // MARK: helper
 

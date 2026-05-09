@@ -105,7 +105,7 @@ struct MuxBarApp: App {
             Divider()
 
             // 5. Quit
-            Button("Quit muxbar") { NSApplication.shared.terminate(nil) }
+            Button(L.menuQuit) { NSApplication.shared.terminate(nil) }
                 .keyboardShortcut("q")
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
@@ -116,18 +116,18 @@ struct MuxBarApp: App {
     /// 메뉴바 아이콘 hover tooltip — 현재 활성 모드 안내.
     private var menuBarTooltip: String {
         if appState.closedLidStore.state.isOn {
-            return "muxbar — Closed-lid mode active (system sleep blocked)"
+            return L.tooltipClosedLid
         }
         if appState.awakeStore.isAwake(in: appState.sessionStore) {
-            return "muxbar — Keep Awake active (caffeinate running)"
+            return L.tooltipKeepAwake
         }
-        return "muxbar — tmux session manager"
+        return L.tooltipIdle
     }
 
     private var header: some View {
         HStack {
             Image(systemName: "terminal.fill")
-            Text("muxbar")
+            Text(L.appName)
                 .font(.headline)
             Spacer()
             if case .connected = appState.sessionStore.connectionState {
