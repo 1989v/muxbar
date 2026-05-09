@@ -55,6 +55,15 @@ public enum L {
     public static var settingsRelaunchConfirm: String          { lookup("settings.relaunch.confirm") }
     public static var settingsRelaunchCancel: String           { lookup("settings.relaunch.cancel") }
 
+    // MARK: status (connection placeholders)
+    public static var statusConnecting: String      { lookup("status.connecting") }
+    public static var statusConnectedEmpty: String  { lookup("status.connected.empty") }
+    public static var statusDisconnected: String    { lookup("status.disconnected") }
+    public static var statusReconnecting: String    { lookup("status.reconnecting") }
+    public static func statusFailed(_ reason: String) -> String {
+        String(format: lookup("status.failed"), reason)
+    }
+
     // MARK: error / tooltip / app
     public static var errorTmuxNotConnected: String   { lookup("error.tmuxNotConnected") }
     public static var errorTmuxBinaryNotFound: String { lookup("error.tmuxBinaryNotFound") }

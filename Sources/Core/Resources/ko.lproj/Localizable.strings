@@ -10,7 +10,7 @@
 "menu.openTemplates"      = "템플릿 폴더 열기…";
 "menu.reloadTemplates"    = "템플릿 다시 읽기";
 "menu.sectionBuiltIn"     = "기본 제공";
-"menu.sectionCustom"      = "사용자";
+"menu.sectionCustom"      = "사용자 정의";
 
 // closed-lid duration popover
 "closedLid.duration"      = "지속 시간";
@@ -47,6 +47,13 @@
 "settings.relaunch.body"           = "언어 변경은 재시작 후 적용됩니다.";
 "settings.relaunch.confirm"        = "재시작";
 "settings.relaunch.cancel"         = "취소";
+
+// connection status placeholders
+"status.connecting"        = "tmux 연결 중…";
+"status.connected.empty"   = "세션이 없습니다. New Session 으로 만드세요.";
+"status.disconnected"      = "연결 끊김";
+"status.reconnecting"      = "재연결 중…";
+"status.failed"            = "연결 실패: %@";
 
 // errors
 "error.tmuxNotConnected"      = "tmux 연결되지 않음 — 먼저 연결하세요";

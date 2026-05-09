@@ -56,11 +56,11 @@ public struct SessionListView: View {
 
     private var placeholderText: String {
         switch store.connectionState {
-        case .connecting:  return "Connecting to tmux…"
-        case .connected:   return "No sessions yet. Use New Session to create one."
-        case .disconnected: return "Disconnected"
-        case .reconnecting: return "Reconnecting…"
-        case .failed(let reason): return "Connection failed: \(reason)"
+        case .connecting:         return L.statusConnecting
+        case .connected:          return L.statusConnectedEmpty
+        case .disconnected:       return L.statusDisconnected
+        case .reconnecting:       return L.statusReconnecting
+        case .failed(let reason): return L.statusFailed(reason)
         }
     }
 }

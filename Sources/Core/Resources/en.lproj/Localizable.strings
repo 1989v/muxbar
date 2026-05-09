@@ -48,6 +48,13 @@
 "settings.relaunch.confirm"        = "Restart";
 "settings.relaunch.cancel"         = "Cancel";
 
+// connection status placeholders
+"status.connecting"        = "Connecting to tmux…";
+"status.connected.empty"   = "No sessions yet. Use New Session to create one.";
+"status.disconnected"      = "Disconnected";
+"status.reconnecting"      = "Reconnecting…";
+"status.failed"            = "Connection failed: %@";
+
 // errors
 "error.tmuxNotConnected"      = "tmux not connected — connect first";
 "error.tmuxBinaryNotFound"    = "tmux binary not found";
