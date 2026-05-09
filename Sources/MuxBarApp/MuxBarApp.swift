@@ -96,7 +96,8 @@ struct MuxBarApp: App {
             // 4. Settings (Open at Login + Closed-lid mode flags)
             SettingsMenu(
                 loginItemService: appState.loginItemService,
-                closedLidPreferences: appState.closedLidPreferences
+                closedLidPreferences: appState.closedLidPreferences,
+                localeService: appState.localeService
             )
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
