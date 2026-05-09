@@ -86,6 +86,7 @@ public struct ClosedLidMenuItem: View {
     }
 
     private static let durationOptions: [(label: String, duration: Duration?)] = [
+        ("30 min", .seconds(1800)),
         ("1 hour", .seconds(3600)),
         ("4 hours", .seconds(14400)),
         ("8 hours", .seconds(28800)),

@@ -120,7 +120,7 @@ public final class ClosedLidStore: ObservableObject {
 `Sources/Features/ClosedLid/ClosedLidMenuItem.swift`. SwiftUI View.
 
 - OFF 상태: `🔒 Closed-lid mode    OFF` 한 줄
-- 탭 → 기간 popover: `1h` / `4h` / `8h` / `∞` 선택 (또는 ESC 로 cancel)
+- 탭 → 기간 popover: `30m` / `1h` / `4h` / `8h` / `∞` 선택 (또는 ESC 로 cancel)
 - ON 상태: `🔒 Closed-lid mode    ON · 3:47:12`. 다시 탭하면 즉시 OFF (popover 없음)
 - 카운트다운: 1초 timer 로 라벨 재계산. Combine `Timer.publish(every: 1, on: .main, in: .common)`.
 - 색상: ON 시 빨간 강조 (Keep Awake 의 오렌지와 구분).
