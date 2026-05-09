@@ -17,24 +17,24 @@ public struct KeepAwakeMenuItem: View {
             HStack {
                 Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
                     .foregroundStyle(isAwake ? .yellow : .secondary)
-                Text("Keep Awake")
+                Text(L.menuKeepAwake)
                 Spacer()
                 if awakeStore.isToggling {
                     ProgressView().scaleEffect(0.6)
                 } else {
-                    Text(source.label)
+                    Text(localizedLabel(source))
                         .font(.caption)
                         .foregroundStyle(isAwake ? .green : .secondary)
                 }
             }
             if case .external = source, !externalSessionList.isEmpty {
-                Text("external: \(externalSessionList)")
+                Text(L.keepAwakeExternalPrefix(externalSessionList))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
             } else if case .both = source {
-                Text("external: \(externalSessionList)")
+                Text(L.keepAwakeExternalPrefix(externalSessionList))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -59,5 +59,14 @@ public struct KeepAwakeMenuItem: View {
         sessionStore.caffeinateStatus.tmuxSessions
             .filter { $0 != AwakeStore.awakeSessionName }
             .joined(separator: ", ")
+    }
+
+    private func localizedLabel(_ source: AwakeStore.Source) -> String {
+        switch source {
+        case .none: return L.keepAwakeStateOff
+        case .muxbar: return L.keepAwakeStateOn
+        case .external: return L.keepAwakeStateExternal
+        case .both: return L.keepAwakeStateBoth
+        }
     }
 }
