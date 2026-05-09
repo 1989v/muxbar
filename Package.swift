@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "muxbar",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         .executable(name: "muxbar", targets: ["MuxBarApp"]),
@@ -24,6 +25,9 @@ let package = Package(
         .target(
             name: "Core",
             dependencies: ["MuxLogging", .product(name: "Logging", package: "swift-log")],
+            resources: [
+                .process("Resources"),
+            ],
             swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(

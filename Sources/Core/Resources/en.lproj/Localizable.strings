@@ -1,0 +1,58 @@
+// menu (top level)
+"menu.keepAwake"          = "Keep Awake";
+"menu.closedLid"          = "Closed-lid mode";
+"menu.newSession"         = "New Session";
+"menu.settings"           = "Settings";
+"menu.quit"               = "Quit muxbar";
+"menu.attach"             = "Attach";
+"menu.preview"            = "Preview";
+"menu.kill"               = "Kill";
+"menu.openTemplates"      = "Edit Templates…";
+"menu.reloadTemplates"    = "Reload Templates";
+
+// closed-lid duration popover
+"closedLid.duration"      = "Duration";
+"closedLid.duration.30m"  = "30 min";
+"closedLid.duration.1h"   = "1 hour";
+"closedLid.duration.4h"   = "4 hours";
+"closedLid.duration.8h"   = "8 hours";
+"closedLid.duration.inf"  = "∞ (until manual off)";
+
+// closed-lid state
+"closedLid.state.off"     = "OFF";
+"closedLid.state.onInf"   = "ON · ∞";
+"closedLid.state.onTimer" = "ON · %@";
+"closedLid.subtitle"      = "sleep blocked (system-wide)";
+
+// keep awake state
+"keepAwake.state.on"      = "ON";
+"keepAwake.state.off"     = "OFF";
+"keepAwake.state.external" = "ON (external)";
+"keepAwake.state.both"    = "ON (muxbar + external)";
+"keepAwake.externalPrefix" = "external: %@";
+
+// settings
+"settings.openAtLogin"            = "Open at Login";
+"settings.openAtLogin.unavailable" = "Open at Login (install .app to enable)";
+"settings.closedLidSection"        = "Closed-lid mode";
+"settings.keepDisplayAwake"        = "Keep display awake";
+"settings.preventScreenSaver"      = "Prevent screen saver";
+"settings.language"                = "Language";
+"settings.language.auto"           = "Auto";
+"settings.language.en"             = "English";
+"settings.language.ko"             = "한국어";
+"settings.relaunch.title"          = "Restart muxbar?";
+"settings.relaunch.body"           = "Language changes apply after restart.";
+"settings.relaunch.confirm"        = "Restart";
+"settings.relaunch.cancel"         = "Cancel";
+
+// errors
+"error.tmuxNotConnected"  = "tmux not connected — connect first";
+
+// menubar tooltip
+"tooltip.idle"            = "muxbar — tmux session manager";
+"tooltip.keepAwake"       = "muxbar — Keep Awake active (caffeinate running)";
+"tooltip.closedLid"       = "muxbar — Closed-lid mode active (system sleep blocked)";
+
+// app
+"app.name"                = "muxbar";
