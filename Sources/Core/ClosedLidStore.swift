@@ -4,7 +4,6 @@ import MuxLogging
 @MainActor
 public final class ClosedLidStore: ObservableObject {
     public static let sessionName = "_muxbar-closed-lid"
-    public static let caffeinateCommand = "caffeinate -is"
 
     public enum State: Equatable {
         case off
@@ -22,6 +21,7 @@ public final class ClosedLidStore: ObservableObject {
     @Published public private(set) var isToggling: Bool = false
 
     private let power: any PowerController
+    private let preferences: ClosedLidPreferences
     private let logger = MuxLogging.logger("Core.ClosedLidStore")
     private var expirationTask: Task<Void, Never>?
     private let acMonitor: PowerSourceMonitor
@@ -30,10 +30,12 @@ public final class ClosedLidStore: ObservableObject {
 
     public init(
         power: any PowerController,
+        preferences: ClosedLidPreferences = ClosedLidPreferences(),
         acMonitor: PowerSourceMonitor = IOKitPowerSourceMonitor(),
         lidMonitor: LidStateMonitor = IOKitLidStateMonitor()
     ) {
         self.power = power
+        self.preferences = preferences
         self.acMonitor = acMonitor
         self.lidMonitor = lidMonitor
     }
@@ -52,7 +54,7 @@ public final class ClosedLidStore: ObservableObject {
 
         do {
             try await sessionProvider.createSession(
-                name: Self.sessionName, command: Self.caffeinateCommand
+                name: Self.sessionName, command: preferences.caffeinateCommand()
             )
         } catch {
             logger.warning("caffeinate session create failed (pmset stays on): \(error.localizedDescription)")

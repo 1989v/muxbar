@@ -30,6 +30,7 @@ struct MuxBarApp: App {
                 awakeStore: appState.awakeStore,
                 closedLidStore: appState.closedLidStore
             )
+            .help(menuBarTooltip)
         }
         .menuBarExtraStyle(.window)
     }
@@ -89,10 +90,13 @@ struct MuxBarApp: App {
 
             Divider()
 
-            // 4. Settings (Open at Login 등 향후 추가)
-            SettingsMenu(loginItemService: appState.loginItemService)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+            // 4. Settings (Open at Login + Closed-lid mode flags)
+            SettingsMenu(
+                loginItemService: appState.loginItemService,
+                closedLidPreferences: appState.closedLidPreferences
+            )
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
 
             Divider()
 
@@ -103,6 +107,17 @@ struct MuxBarApp: App {
                 .padding(.vertical, 6)
         }
         .frame(width: 320)
+    }
+
+    /// 메뉴바 아이콘 hover tooltip — 현재 활성 모드 안내.
+    private var menuBarTooltip: String {
+        if appState.closedLidStore.state.isOn {
+            return "muxbar — Closed-lid mode active (system sleep blocked)"
+        }
+        if appState.awakeStore.isAwake(in: appState.sessionStore) {
+            return "muxbar — Keep Awake active (caffeinate running)"
+        }
+        return "muxbar — tmux session manager"
     }
 
     private var header: some View {

@@ -12,6 +12,7 @@ import HotKey
 public final class AppState: ObservableObject {
     public let sessionStore: SessionStore
     public let awakeStore: AwakeStore
+    public let closedLidPreferences: ClosedLidPreferences
     public let closedLidStore: ClosedLidStore
     public let previewController: PreviewController
     public let terminalAdapter: TerminalAdapter?
@@ -42,7 +43,11 @@ public final class AppState: ObservableObject {
         self.previewController = PreviewController()
         self.sessionStore = SessionStore()
         self.awakeStore = AwakeStore()
-        self.closedLidStore = ClosedLidStore(power: DefaultPowerController())
+        self.closedLidPreferences = ClosedLidPreferences()
+        self.closedLidStore = ClosedLidStore(
+            power: DefaultPowerController(),
+            preferences: self.closedLidPreferences
+        )
         self.templateRunner = TemplateRunner()
         self.templateStore = TemplateStore()
         self.hotKeyCenter = HotKeyCenter()
