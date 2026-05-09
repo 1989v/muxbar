@@ -24,7 +24,7 @@ public struct ClosedLidMenuItem: View {
             HStack {
                 Image(systemName: store.state.isOn ? "lock.fill" : "lock")
                     .foregroundStyle(store.state.isOn ? .red : .secondary)
-                Text("Closed-lid mode")
+                Text(L.menuClosedLid)
                 Spacer()
                 if store.isToggling {
                     ProgressView().scaleEffect(0.6)
@@ -35,7 +35,7 @@ public struct ClosedLidMenuItem: View {
                 }
             }
             if store.state.isOn {
-                Text("sleep blocked (system-wide)")
+                Text(L.closedLidSubtitle)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -58,21 +58,22 @@ public struct ClosedLidMenuItem: View {
     private var stateLabel: String {
         switch store.state {
         case .off:
-            return "OFF"
+            return L.closedLidStateOff
         case .on(let expiresAt):
-            guard let expiresAt else { return "ON · ∞" }
+            guard let expiresAt else { return L.closedLidStateOnInf }
             let remaining = max(0, Int(expiresAt.timeIntervalSince(now)))
             let h = remaining / 3600
             let m = (remaining % 3600) / 60
             let s = remaining % 60
-            return String(format: "ON · %d:%02d:%02d", h, m, s)
+            let timeStr = String(format: "%d:%02d:%02d", h, m, s)
+            return L.closedLidStateOnTimer(timeStr)
         }
     }
 
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Duration").font(.caption).foregroundStyle(.secondary)
-            ForEach(Self.durationOptions, id: \.label) { opt in
+            Text(L.closedLidDuration).font(.caption).foregroundStyle(.secondary)
+            ForEach(Self.durationOptions(), id: \.label) { opt in
                 Button(opt.label) {
                     showingPicker = false
                     onTurnOn(opt.duration)
@@ -85,11 +86,13 @@ public struct ClosedLidMenuItem: View {
         .padding(8)
     }
 
-    private static let durationOptions: [(label: String, duration: Duration?)] = [
-        ("30 min", .seconds(1800)),
-        ("1 hour", .seconds(3600)),
-        ("4 hours", .seconds(14400)),
-        ("8 hours", .seconds(28800)),
-        ("∞ (until manual off)", nil),
-    ]
+    private static func durationOptions() -> [(label: String, duration: Duration?)] {
+        [
+            (L.closedLidDuration30m, .seconds(1800)),
+            (L.closedLidDuration1h, .seconds(3600)),
+            (L.closedLidDuration4h, .seconds(14400)),
+            (L.closedLidDuration8h, .seconds(28800)),
+            (L.closedLidDurationInf, nil),
+        ]
+    }
 }
