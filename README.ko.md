@@ -19,7 +19,7 @@
 - **Kill** — 메뉴에서 바로 세션 종료
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
-- **Closed-lid mode** — MacBook 덮개를 닫고도 시스템 sleep 없이 백그라운드 작업을 진행할 수 있게 하는 토글. 클릭 → 지속 시간 선택 (1h / 4h / 8h / ∞) → 관리자 비밀번호 입력 (Touch ID 지원). 자동 해제: 시간 만료 / AC 어댑터 분리 / lid 열림 / muxbar 종료. `pmset -a disablesleep 1` + `caffeinate -is` 결합. AppleScript admin prompt 사용 — helper 설치/Apple Developer 멤버십 불필요. Keep Awake 와 독립 토글, 활성 시 메뉴바 아이콘 빨간 🔒 로 표시.
+- **Closed-lid mode** — 노트북을 가방에 넣은 채로도 빌드 / CI / 원격 세션이 계속 돌게. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
 - **템플릿** — 빌트인 + 사용자 YAML 템플릿. New Session 에서 선택
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
 - **Open at Login** — `.app` 번들로 설치된 경우 macOS Login Item 등록 (Settings 하위)
@@ -61,6 +61,56 @@
 - 5개 초과하면 리스트 내부 스크롤
 - 행 우측 `⋯` 를 누르면 액션 메뉴 (Attach / Preview / Kill)
 - 세션 이름 자체를 누르면 라이브 프리뷰 팝오버가 열림
+
+<a id="closed-lid-mode-detailed"></a>
+## Closed-lid mode
+
+MacBook 덮개를 닫고도 시스템 sleep 없이 백그라운드 작업을 진행하게 하는 토글.
+
+### 사용 시나리오
+
+- 출퇴근/이동 중에도 계속 돌려야 하는 빌드 · 테스트 · CI 작업
+- 가방 안에서 끊기지 않아야 하는 SSH 세션
+- 외부 모니터 없이 밤새 돌릴 watcher / poller / 데이터 수집 스크립트
+
+### 동작 원리
+
+두 레이어를 결합해서 lid 닫혀도 실제로 시스템이 깨어있게:
+
+| 레이어 | 효과 |
+|---|---|
+| `pmset -a disablesleep 1` (커널 레벨) | lid 닫힘 → 강제 sleep 경로 차단 |
+| `_muxbar-closed-lid` tmux 세션의 `caffeinate -is` | idle + system IOPM assertion 으로 보강 |
+
+디스플레이는 의도적으로 켜두지 않습니다 (`-d` 빼둠). lid 가 닫힌 상태라 어차피 lid 센서가 internal display 를 hardware 레벨로 끄고 — 가방 모드 워크로드에 정확히 부합.
+
+### 자동 해제 (4 트리거)
+
+| 트리거 | 이유 |
+|---|---|
+| ⏱ 타이머 만료 | 토글 시 선택한 기간 |
+| 🔌 AC 어댑터 **분리** (transition 만) | 배터리 급감 방지. 이미 배터리 모드일 때 토글한 경우엔 발화 안 함 — 가방 사용 시나리오 보호. |
+| 💻 lid 열림 | 사용자가 돌아왔으니 일반 sleep 정책 복귀 |
+| 🚪 muxbar 종료 | `applicationShouldTerminate` 가 `pmset` 복원 끝날 때까지 대기 후 종료 |
+
+OFF 도중 사용자가 admin 비밀번호 prompt 를 cancel 하면 state 는 ON 유지 + AC/lid monitor 재무장 — zombie 상태 안 남음.
+
+### macOS 정식 클램쉘 모드와 비교
+
+| | macOS 클램쉘 모드 (Apple) | Closed-lid mode |
+|---|---|---|
+| 발동 | AC + 외부 디스플레이 + 외부 입력 모두 연결 시 자동 | 수동 토글 |
+| 외부 디스플레이 | **필요** | 불필요 |
+| lid 닫힘 시 화면 | 외부 모니터로 출력 | 꺼짐 (lid 센서) |
+| lid 닫힘 시 CPU | 동작 | 동작 |
+
+Apple 의 클램쉘 모드는 "데스크에 거치된 노트북" 용. Closed-lid mode 는 "가방 안 노트북" 용.
+
+### 비용 / 설정
+
+- Apple Developer Program 불필요 — `sudo pmset` 을 AppleScript admin prompt 로 호출
+- helper daemon / kernel extension 없음
+- macOS 가 admin 비밀번호를 약 5분간 캐시하므로 ON → OFF → 다시 ON 같은 빠른 반복 조작은 prompt 한 번으로 충분
 
 ## 요구사항
 

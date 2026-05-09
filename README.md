@@ -19,7 +19,7 @@
 - **Kill** — Drop a session from the menu
 - **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
-- **Closed-lid mode** — Prevents system sleep even when the MacBook lid is closed. Click → choose duration (1h / 4h / 8h / ∞) → enter admin password (Touch ID supported). Auto-disables on timer expiry, AC adapter unplug, lid open, or muxbar quit. Combines `pmset -a disablesleep 1` + `caffeinate -is`. Uses an AppleScript admin prompt — no helper installer or Apple Developer Program needed. Independent toggle from Keep Awake; menubar icon turns red 🔒 while active.
+- **Closed-lid mode** — Toss the laptop in your bag and keep your build / CI / remote session running. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit. See [Closed-lid mode](#closed-lid-mode-detailed) below.
 - **Templates** — Built-in and user-defined session layouts (YAML). New Session → pick a template.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
 - **Open at Login** — Registers as a macOS Login Item under Settings (when installed as a bundled `.app`).
@@ -61,6 +61,56 @@
 - More than 5 rows → list scrolls inside the menu
 - `⋯` on a row opens the action menu (Attach / Preview / Kill)
 - Tapping the session name itself opens the live preview popover
+
+<a id="closed-lid-mode-detailed"></a>
+## Closed-lid mode
+
+A toggle that prevents system sleep — including when the MacBook lid is closed — so unattended work keeps running.
+
+### When you'd use it
+
+- Long-running build / test / CI job you want to keep going while you commute
+- Remote SSH session you don't want to drop while the laptop is in your bag
+- Watcher / poller / data-pull script that has to stay alive overnight without an external display
+
+### How it works
+
+Combines two layers so the system actually stays awake under closed-lid:
+
+| Layer | Effect |
+|---|---|
+| `pmset -a disablesleep 1` (kernel-level) | Blocks the lid-close → forced sleep path |
+| `caffeinate -is` in `_muxbar-closed-lid` tmux session | Backs up the kernel hint with idle + system IOPM assertions |
+
+The display is intentionally **not** kept on — `-d` is omitted. With the lid closed the lid sensor turns the internal display off in hardware anyway, which is exactly what you want for a bag-mode workload.
+
+### Auto-off (4 triggers)
+
+| Trigger | Why |
+|---|---|
+| ⏱ Timer expires | The duration you picked at toggle time |
+| 🔌 AC adapter **unplugged** (transition only) | Prevent surprise battery drain. Doesn't fire if you toggled on while already on battery — your in-bag use case still works. |
+| 💻 Lid opens | You're back at the laptop — flip back to normal sleep policy |
+| 🚪 muxbar quits | `applicationShouldTerminate` waits for `pmset` to be restored before exiting |
+
+If the user cancels the admin password prompt during turn-off the state stays ON and the AC/lid monitors are re-armed — no zombie state.
+
+### macOS clamshell mode (Apple's own) vs. this
+
+| | macOS clamshell mode | Closed-lid mode |
+|---|---|---|
+| Trigger | Auto when AC + external display + external keyboard/mouse all plugged in | Manual toggle |
+| External display required | **Yes** | No |
+| Display while lid closed | Output to external monitor | Off (lid sensor) |
+| CPU while lid closed | Running | Running |
+
+Apple's clamshell mode is for "MacBook on a stand at my desk." Closed-lid mode is for "MacBook in a bag."
+
+### Cost / setup
+
+- No Apple Developer Program needed — uses an AppleScript admin prompt for `sudo pmset`
+- No helper daemon, no kernel extension
+- The system caches the admin password for ~5 minutes, so toggle on → toggle off → back on doesn't re-prompt
 
 ## Requirements
 
