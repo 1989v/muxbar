@@ -1,0 +1,58 @@
+// menu (top level)
+"menu.keepAwake"          = "Keep Awake";
+"menu.closedLid"          = "Closed-lid mode";
+"menu.newSession"         = "새 세션";
+"menu.settings"           = "설정";
+"menu.quit"               = "muxbar 종료";
+"menu.attach"             = "연결";
+"menu.preview"            = "미리보기";
+"menu.kill"               = "종료";
+"menu.openTemplates"      = "템플릿 폴더 열기…";
+"menu.reloadTemplates"    = "템플릿 다시 읽기";
+
+// closed-lid duration popover
+"closedLid.duration"      = "지속 시간";
+"closedLid.duration.30m"  = "30분";
+"closedLid.duration.1h"   = "1시간";
+"closedLid.duration.4h"   = "4시간";
+"closedLid.duration.8h"   = "8시간";
+"closedLid.duration.inf"  = "∞ (수동 OFF 까지)";
+
+// closed-lid state
+"closedLid.state.off"     = "OFF";
+"closedLid.state.onInf"   = "ON · ∞";
+"closedLid.state.onTimer" = "ON · %@";
+"closedLid.subtitle"      = "sleep 차단 (시스템 전역)";
+
+// keep awake state
+"keepAwake.state.on"      = "ON";
+"keepAwake.state.off"     = "OFF";
+"keepAwake.state.external" = "ON (외부)";
+"keepAwake.state.both"    = "ON (muxbar + 외부)";
+"keepAwake.externalPrefix" = "외부: %@";
+
+// settings
+"settings.openAtLogin"            = "시작 시 자동 실행";
+"settings.openAtLogin.unavailable" = "시작 시 자동 실행 (.app 설치 후 활성화)";
+"settings.closedLidSection"        = "Closed-lid mode";
+"settings.keepDisplayAwake"        = "화면 켜둠";
+"settings.preventScreenSaver"      = "화면 보호기 차단";
+"settings.language"                = "언어";
+"settings.language.auto"           = "자동";
+"settings.language.en"             = "English";
+"settings.language.ko"             = "한국어";
+"settings.relaunch.title"          = "muxbar 재시작?";
+"settings.relaunch.body"           = "언어 변경은 재시작 후 적용됩니다.";
+"settings.relaunch.confirm"        = "재시작";
+"settings.relaunch.cancel"         = "취소";
+
+// errors
+"error.tmuxNotConnected"  = "tmux 연결되지 않음 — 먼저 연결하세요";
+
+// menubar tooltip
+"tooltip.idle"            = "muxbar — tmux 세션 관리";
+"tooltip.keepAwake"       = "muxbar — Keep Awake 활성 (caffeinate 실행 중)";
+"tooltip.closedLid"       = "muxbar — Closed-lid mode 활성 (시스템 sleep 차단)";
+
+// app
+"app.name"                = "muxbar";
