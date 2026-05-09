@@ -9,6 +9,8 @@
 "menu.kill"               = "Kill";
 "menu.openTemplates"      = "Edit Templates…";
 "menu.reloadTemplates"    = "Reload Templates";
+"menu.sectionBuiltIn"     = "Built-in";
+"menu.sectionCustom"      = "Custom";
 
 // closed-lid duration popover
 "closedLid.duration"      = "Duration";

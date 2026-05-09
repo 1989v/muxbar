@@ -14,6 +14,8 @@ public enum L {
     public static var menuKill: String            { lookup("menu.kill") }
     public static var menuOpenTemplates: String   { lookup("menu.openTemplates") }
     public static var menuReloadTemplates: String { lookup("menu.reloadTemplates") }
+    public static var menuSectionBuiltIn: String  { lookup("menu.sectionBuiltIn") }
+    public static var menuSectionCustom: String   { lookup("menu.sectionCustom") }
 
     // MARK: closed-lid
     public static var closedLidDuration: String      { lookup("closedLid.duration") }
