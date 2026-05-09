@@ -1,10 +1,10 @@
 cask "muxbar" do
-  version "0.1.0"
+  version "0.2.0"
   sha256 "TBD_AFTER_BUILD"
 
   url "https://github.com/1989v/muxbar/releases/download/v#{version}/muxbar-#{version}.dmg"
   name "muxbar"
-  desc "tmux session manager with caffeinate toggle in the menu bar"
+  desc "tmux session manager + closed-lid mode in the menu bar"
   homepage "https://github.com/1989v/muxbar"
 
   depends_on formula: "tmux"
