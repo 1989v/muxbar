@@ -51,7 +51,7 @@
 // errors
 "error.tmuxNotConnected"      = "tmux 연결되지 않음 — 먼저 연결하세요";
 "error.tmuxBinaryNotFound"    = "tmux 바이너리 못 찾음";
-"error.bootstrapFailed"       = "부팅 실패: %@";
+"error.bootstrapFailed"       = "초기화 실패: %@";
 "error.attachFailed"          = "연결 실패: %@";
 "error.templateRunFailed"     = "템플릿 실행 실패: %@";
 

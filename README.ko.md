@@ -20,6 +20,7 @@
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
 - **Closed-lid mode** — 노트북을 가방에 넣은 채로도 빌드 / CI / 원격 세션이 계속 돌게. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
+- **다국어 지원** — English + 한국어. Settings → 언어 에서 전환 (자동 / English / 한국어).
 - **템플릿** — 빌트인 + 사용자 YAML 템플릿. New Session 에서 선택
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
 - **Open at Login** — `.app` 번들로 설치된 경우 macOS Login Item 등록 (Settings 하위)
