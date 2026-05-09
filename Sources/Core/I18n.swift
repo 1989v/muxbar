@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 /// 타입세이프 user-facing string 키. 모든 NSLocalizedString lookup 의 단일 진입점.
 public enum L {
@@ -64,5 +65,55 @@ public enum L {
     /// 매번 lookup — 언어 변경 후 재시작 시 새 lproj 가 적절히 적용되도록 cache 안 함.
     private static func lookup(_ key: String) -> String {
         NSLocalizedString(key, bundle: .module, comment: "")
+    }
+}
+
+/// Settings 의 Language picker 모델.
+public enum LanguagePreference: String, Codable, CaseIterable, Identifiable, Sendable {
+    case auto
+    case en
+    case ko
+    public var id: String { rawValue }
+}
+
+/// 언어 preference 저장 + AppleLanguages override + relaunch.
+@MainActor
+public final class LocaleService: ObservableObject {
+    public static let key = "muxbar.language"
+    private static let appleLanguagesKey = "AppleLanguages"
+
+    @Published public var preference: LanguagePreference {
+        didSet { defaults.set(preference.rawValue, forKey: Self.key) }
+    }
+    private let defaults: UserDefaults
+
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let raw = defaults.string(forKey: Self.key) ?? LanguagePreference.auto.rawValue
+        self.preference = LanguagePreference(rawValue: raw) ?? .auto
+    }
+
+    /// 앱 시작 시 호출. preference 따라 AppleLanguages 결정.
+    /// .auto 면 시스템 그대로 (AppleLanguages key 제거), 나머진 forced override.
+    public func applyAtLaunch() {
+        switch preference {
+        case .auto:
+            defaults.removeObject(forKey: Self.appleLanguagesKey)
+        case .en:
+            defaults.set(["en"], forKey: Self.appleLanguagesKey)
+        case .ko:
+            defaults.set(["ko"], forKey: Self.appleLanguagesKey)
+        }
+    }
+
+    /// Settings 에서 변경 후 호출 — preference 적용 + 새 인스턴스 띄우고 현재 종료.
+    public func applyAndRelaunch() {
+        applyAtLaunch()
+        let url = Bundle.main.bundleURL
+        let config = NSWorkspace.OpenConfiguration()
+        config.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: url, configuration: config) { _, _ in
+            DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
     }
 }

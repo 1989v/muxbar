@@ -27,6 +27,57 @@ final class I18nTests: XCTestCase {
         XCTAssertTrue(s.contains("3:47:12"), "결과: \(s)")
     }
 
+    // MARK: LocaleService tests
+
+    private func makeIsolatedDefaults() -> UserDefaults {
+        let suite = "muxbar.test.locale.\(UUID().uuidString)"
+        return UserDefaults(suiteName: suite)!
+    }
+
+    @MainActor
+    func test_languagePreference_defaultsToAuto() {
+        let svc = LocaleService(defaults: makeIsolatedDefaults())
+        XCTAssertEqual(svc.preference, .auto)
+    }
+
+    @MainActor
+    func test_languagePreference_persists() {
+        let defaults = makeIsolatedDefaults()
+        let svc1 = LocaleService(defaults: defaults)
+        svc1.preference = .ko
+
+        let svc2 = LocaleService(defaults: defaults)
+        XCTAssertEqual(svc2.preference, .ko)
+    }
+
+    @MainActor
+    func test_applyAtLaunch_auto_removesAppleLanguagesKey() {
+        let defaults = makeIsolatedDefaults()
+        defaults.set(["en"], forKey: "AppleLanguages")
+        let svc = LocaleService(defaults: defaults)
+        svc.preference = .auto
+        svc.applyAtLaunch()
+        XCTAssertNil(defaults.array(forKey: "AppleLanguages"))
+    }
+
+    @MainActor
+    func test_applyAtLaunch_en_setsEnglishOverride() {
+        let defaults = makeIsolatedDefaults()
+        let svc = LocaleService(defaults: defaults)
+        svc.preference = .en
+        svc.applyAtLaunch()
+        XCTAssertEqual(defaults.array(forKey: "AppleLanguages") as? [String], ["en"])
+    }
+
+    @MainActor
+    func test_applyAtLaunch_ko_setsKoreanOverride() {
+        let defaults = makeIsolatedDefaults()
+        let svc = LocaleService(defaults: defaults)
+        svc.preference = .ko
+        svc.applyAtLaunch()
+        XCTAssertEqual(defaults.array(forKey: "AppleLanguages") as? [String], ["ko"])
+    }
+
     // MARK: helpers
 
     private func keysFromLproj(in bundle: Bundle, lang: String) throws -> Set<String> {
