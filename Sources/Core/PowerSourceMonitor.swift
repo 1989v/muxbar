@@ -17,6 +17,7 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var handler: (@MainActor () -> Void)?
     private var contextBox: MonitorWeakBox<IOKitPowerSourceMonitor>?
+    private var lastAC: Bool = true
 
     public init() {}
 
@@ -24,6 +25,7 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
     public func onACDisconnect(_ handler: @escaping @MainActor () -> Void) {
         stop()  // clean up any prior subscription
         self.handler = handler
+        self.lastAC = isOnAC()  // 등록 시점 상태 기억
 
         let box = MonitorWeakBox(self)
         self.contextBox = box
@@ -43,9 +45,13 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
 
     @MainActor
     private func checkAndFireIfDisconnected() {
-        guard !isOnAC() else { return }
-        handler?()
-        stop()
+        let nowAC = isOnAC()
+        if lastAC && !nowAC {  // AC → battery transition 만 fire
+            handler?()
+            stop()
+            return
+        }
+        lastAC = nowAC
     }
 
     @MainActor
@@ -59,6 +65,7 @@ public final class IOKitPowerSourceMonitor: PowerSourceMonitor {
         // until it runs; callback delivery is fenced by IOKit run-loop-source removal above.
         contextBox = nil
         handler = nil
+        lastAC = true  // 다음 등록 전 default 로 리셋
     }
 
     private func isOnAC() -> Bool {
