@@ -46,9 +46,9 @@ public struct SessionRowView: View {
                 .foregroundStyle(.secondary)
 
             Menu {
-                Button("Attach") { onAttach() }
-                Button("Preview") { onPreview() }
-                Button("Kill", role: .destructive) { onKill() }
+                Button(L.menuAttach) { onAttach() }
+                Button(L.menuPreview) { onPreview() }
+                Button(L.menuKill, role: .destructive) { onKill() }
             } label: {
                 Image(systemName: "ellipsis")
             }

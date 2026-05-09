@@ -44,12 +44,12 @@ public struct NewSessionMenu: View {
             }
 
             Divider()
-            Button("Edit Templates…") { onOpenFolder() }
-            Button("Reload Templates") { onReload() }
+            Button(L.menuOpenTemplates) { onOpenFolder() }
+            Button(L.menuReloadTemplates) { onReload() }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "plus.rectangle.on.rectangle")
-                Text("New Session")
+                Text(L.menuNewSession)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption2)
