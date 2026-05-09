@@ -21,6 +21,7 @@ public final class AppState: ObservableObject {
     public let hotKeyCenter: HotKeyCenter
     public let notificationService: NotificationService
     public let loginItemService: LoginItemService
+    public let localeService: LocaleService
     public private(set) var controlClient: ControlClient?
     private var bootstrapTask: Task<Void, Never>?
 
@@ -53,6 +54,7 @@ public final class AppState: ObservableObject {
         self.hotKeyCenter = HotKeyCenter()
         self.notificationService = NotificationService()
         self.loginItemService = LoginItemService()
+        self.localeService = LocaleService()
 
         if let tmuxPath = TmuxPath.resolve() {
             self.terminalAdapter = TerminalAdapter(tmuxPath: tmuxPath)

@@ -4,6 +4,7 @@ import Core
 import Features
 import TerminalLauncher
 import MuxLogging
+import Foundation
 
 @main
 struct MuxBarApp: App {
@@ -13,6 +14,8 @@ struct MuxBarApp: App {
     init() {
         MuxLogging.bootstrap()
         MuxLogging.logger("app").info("muxbar launched")
+        // 가장 이른 시점에 AppleLanguages 결정 — 이후 모든 NSLocalizedString lookup 이 적절한 lproj 사용.
+        LocaleService().applyAtLaunch()
     }
 
     var body: some Scene {
