@@ -8,14 +8,22 @@ VERSION="${1:-0.1.0}"
 OUT_DIR="dist"
 APP_NAME="muxbar.app"
 
-echo "[1/5] swift build -c release (universal)"
-swift build -c release --arch arm64 --arch x86_64
+echo "[1/5] swift build -c release"
+# UNIVERSAL=1 일 때만 arm64+x86_64 universal binary (Xcode.app 필요).
+# 기본은 현재 머신 native arch — Command Line Tools 만 있으면 됨.
+if [ "${UNIVERSAL:-}" = "1" ]; then
+    swift build -c release --arch arm64 --arch x86_64
+    SRC_BIN=".build/apple/Products/Release/muxbar"
+else
+    swift build -c release
+    SRC_BIN=".build/release/muxbar"
+fi
 
 echo "[2/5] .app 번들 생성"
 mkdir -p "$OUT_DIR/$APP_NAME/Contents/MacOS"
 mkdir -p "$OUT_DIR/$APP_NAME/Contents/Resources"
 
-cp .build/apple/Products/Release/muxbar "$OUT_DIR/$APP_NAME/Contents/MacOS/muxbar"
+cp "$SRC_BIN" "$OUT_DIR/$APP_NAME/Contents/MacOS/muxbar"
 
 cat > "$OUT_DIR/$APP_NAME/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
