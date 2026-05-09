@@ -9,11 +9,12 @@ cask "muxbar" do
 
   depends_on formula: "tmux"
   depends_on macos: ">= :ventura"
+  depends_on arch: :arm64
 
   app "muxbar.app"
 
   postflight do
-    system_command "xattr",
+    system_command "/usr/bin/xattr",
                    args: ["-dr", "com.apple.quarantine", "#{appdir}/muxbar.app"],
                    sudo: false
   end
