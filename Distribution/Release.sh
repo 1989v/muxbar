@@ -34,6 +34,16 @@ for b in "$SRC_DIR"/*.bundle; do
 done
 shopt -u nullglob
 
+# main bundle 에 .lproj 미러 — NSBundle.preferredLocalizations 가 main bundle 의
+# 가용 언어를 보고 결정하는 macOS quirk 대응. sub-bundle 만 있으면 영어 fallback.
+CORE_BUNDLE="$OUT_DIR/$APP_NAME/Contents/Resources/muxbar_Core.bundle"
+if [ -d "$CORE_BUNDLE" ]; then
+    for lp in "$CORE_BUNDLE"/*.lproj; do
+        [ -d "$lp" ] || continue
+        mkdir -p "$OUT_DIR/$APP_NAME/Contents/Resources/$(basename "$lp")"
+    done
+fi
+
 cat > "$OUT_DIR/$APP_NAME/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -50,6 +60,8 @@ cat > "$OUT_DIR/$APP_NAME/Contents/Info.plist" <<EOF
 <key>NSHighResolutionCapable</key><true/>
 <key>NSSupportsAutomaticTermination</key><false/>
 <key>NSSupportsSuddenTermination</key><false/>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>ko</string></array>
 </dict></plist>
 EOF
 

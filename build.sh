@@ -52,6 +52,17 @@ for b in "$REPO_ROOT/.build/release/"*.bundle; do
 done
 shopt -u nullglob
 
+# main bundle 에 .lproj 미러 — macOS 의 NSBundle.preferredLocalizations 가
+# main bundle 의 가용 언어를 보고 결정하는 quirk 때문. SPM Bundle.module 만
+# 있으면 main bundle 이 영어 only 로 인식돼 sub-bundle 의 ko lookup 도 fallback.
+CORE_LPROJ="$APP_PATH/Contents/Resources/muxbar_Core.bundle"
+if [ -d "$CORE_LPROJ" ]; then
+    for lp in "$CORE_LPROJ"/*.lproj; do
+        [ -d "$lp" ] || continue
+        mkdir -p "$APP_PATH/Contents/Resources/$(basename "$lp")"
+    done
+fi
+
 cat > "$APP_PATH/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -71,6 +82,12 @@ cat > "$APP_PATH/Contents/Info.plist" <<EOF
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
     <key>NSHumanReadableCopyright</key><string>© 2026 kgd. MIT.</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ko</string>
+    </array>
 </dict>
 </plist>
 EOF
