@@ -44,6 +44,14 @@ mkdir -p "$APP_PATH/Contents/Resources"
 cp "$BINARY_PATH" "$APP_PATH/Contents/MacOS/muxbar"
 chmod +x "$APP_PATH/Contents/MacOS/muxbar"
 
+# SPM resource bundles (Bundle.module) 를 .app/Contents/Resources/ 로 복사.
+# 누락 시 NSLocalizedString 의 lproj lookup 실패 → i18n 안 먹음.
+shopt -s nullglob
+for b in "$REPO_ROOT/.build/release/"*.bundle; do
+    cp -R "$b" "$APP_PATH/Contents/Resources/"
+done
+shopt -u nullglob
+
 cat > "$APP_PATH/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

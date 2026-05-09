@@ -14,9 +14,11 @@ echo "[1/5] swift build -c release"
 if [ "${UNIVERSAL:-}" = "1" ]; then
     swift build -c release --arch arm64 --arch x86_64
     SRC_BIN=".build/apple/Products/Release/muxbar"
+    SRC_DIR=".build/apple/Products/Release"
 else
     swift build -c release
     SRC_BIN=".build/release/muxbar"
+    SRC_DIR=".build/release"
 fi
 
 echo "[2/5] .app 번들 생성"
@@ -24,6 +26,13 @@ mkdir -p "$OUT_DIR/$APP_NAME/Contents/MacOS"
 mkdir -p "$OUT_DIR/$APP_NAME/Contents/Resources"
 
 cp "$SRC_BIN" "$OUT_DIR/$APP_NAME/Contents/MacOS/muxbar"
+
+# SPM resource bundles (Bundle.module) 를 .app/Contents/Resources/ 로 복사.
+shopt -s nullglob
+for b in "$SRC_DIR"/*.bundle; do
+    cp -R "$b" "$OUT_DIR/$APP_NAME/Contents/Resources/"
+done
+shopt -u nullglob
 
 cat > "$OUT_DIR/$APP_NAME/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
