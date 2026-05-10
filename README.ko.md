@@ -113,6 +113,21 @@ Apple 의 클램쉘 모드는 "데스크에 거치된 노트북" 용. Closed-lid
 - helper daemon / kernel extension 없음
 - macOS 가 admin 비밀번호를 약 5분간 캐시하므로 ON → OFF → 다시 ON 같은 빠른 반복 조작은 prompt 한 번으로 충분
 
+### 비밀번호 없이 사용 (선택)
+
+타이머 만료 / 자동 해제 / 5분 캐시 만료 후 OFF 등 모든 상황에서 비밀번호 prompt 없이 동작하게 하려면 `sudoers` 에 `pmset` 만 NOPASSWD 룰로 등록:
+
+```bash
+echo "$(whoami) ALL = (root) NOPASSWD: /usr/bin/pmset" | sudo tee /etc/sudoers.d/muxbar > /dev/null
+sudo chmod 440 /etc/sudoers.d/muxbar
+```
+
+muxbar 가 먼저 `sudo -n pmset` 을 시도 → 룰이 있으면 prompt 없이 통과. 룰 미설정 시 AppleScript admin 다이얼로그로 fallback (기존 동작).
+
+해제: `sudo rm /etc/sudoers.d/muxbar`.
+
+보안 범위: `pmset` (system sleep 정책) 한 명령만 비밀번호 없이 허용. 파일시스템 / 네트워크 / 프로세스 / 사용자 권한 영향 없음.
+
 ## 요구사항
 
 - macOS 13 (Ventura) 이상

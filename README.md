@@ -113,6 +113,21 @@ Apple's clamshell mode is for "MacBook on a stand at my desk." Closed-lid mode i
 - No helper daemon, no kernel extension
 - The system caches the admin password for ~5 minutes, so toggle on → toggle off → back on doesn't re-prompt
 
+### Passwordless setup (optional)
+
+To skip the password prompt entirely (including when the timer expires or auto-off fires after the 5-minute credential cache), allow `pmset` via `sudoers`:
+
+```bash
+echo "$(whoami) ALL = (root) NOPASSWD: /usr/bin/pmset" | sudo tee /etc/sudoers.d/muxbar > /dev/null
+sudo chmod 440 /etc/sudoers.d/muxbar
+```
+
+muxbar tries `sudo -n pmset` first; if the rule is set, it runs without a prompt. Without the rule, muxbar falls back to the AppleScript admin dialog (current default behavior).
+
+To revert: `sudo rm /etc/sudoers.d/muxbar`.
+
+Security scope: only `pmset` (system sleep policy) is allowed without password — file system, network, process, and user permissions are not affected.
+
 ## Requirements
 
 - macOS 13 (Ventura) or later

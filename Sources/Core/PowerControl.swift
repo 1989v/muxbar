@@ -20,12 +20,32 @@ public enum PowerControl {
 
     @MainActor
     public static func disableSystemSleep() async throws {
+        if runSudoNoPrompt(disable: true) { return }
         try run(disable: true)
     }
 
     @MainActor
     public static func enableSystemSleep() async throws {
+        if runSudoNoPrompt(disable: false) { return }
         try run(disable: false)
+    }
+
+    /// `sudo -n /usr/bin/pmset -a disablesleep N` 시도. NOPASSWD 룰이 있으면 prompt 없이 통과.
+    /// 룰 미설정/만료/cache miss 면 sudo 가 non-zero 종료 → false 반환 → AppleScript fallback.
+    @MainActor
+    private static func runSudoNoPrompt(disable: Bool) -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
+        p.arguments = ["-n", "/usr/bin/pmset", "-a", "disablesleep", disable ? "1" : "0"]
+        p.standardError = Pipe()
+        p.standardOutput = Pipe()
+        do {
+            try p.run()
+            p.waitUntilExit()
+            return p.terminationStatus == 0
+        } catch {
+            return false
+        }
     }
 
     @MainActor
