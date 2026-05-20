@@ -4,6 +4,8 @@
 
 > tmux 세션 관리 + caffeinate 토글을 메뉴바에서. macOS 네이티브 앱.
 
+**이런 용도로:** tmux 세션 매니저 · Keep Awake 토글 · closed-lid 모드 (덮개 닫고도 작업 유지) · **장시간 실행 스크립트 런처** (OCI / 클라우드 용량 polling / 백업 / 배치 잡).
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
@@ -21,7 +23,7 @@
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
 - **Closed-lid mode** — 노트북을 가방에 넣은 채로도 빌드 / CI / 원격 세션이 계속 돌게. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
 - **다국어 지원** — English + 한국어. Settings → 언어 에서 전환 (자동 / English / 한국어).
-- **템플릿** — 빌트인 + 사용자 YAML 템플릿. New Session 에서 선택
+- **템플릿 / 스크립트 런처** — 빌트인 + 사용자 YAML 템플릿. 장시간 실행되는 스크립트(OCI 인스턴스 생성, 클라우드 용량 polling, 백업, 배치 잡)를 메뉴바 토글처럼 한 클릭으로 띄우고 detach/re-attach — 스크립트는 계속 돈다. [장시간 실행 스크립트 런처](#long-running-script-launcher) 섹션 참고.
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
 - **Open at Login** — `.app` 번들로 설치된 경우 macOS Login Item 등록 (Settings 하위)
 
@@ -127,6 +129,40 @@ muxbar 가 먼저 `sudo -n pmset` 을 시도 → 룰이 있으면 prompt 없이 
 해제: `sudo rm /etc/sudoers.d/muxbar`.
 
 보안 범위: `pmset` (system sleep 정책) 한 명령만 비밀번호 없이 허용. 파일시스템 / 네트워크 / 프로세스 / 사용자 권한 영향 없음.
+
+<a id="long-running-script-launcher"></a>
+## 장시간 실행 스크립트 런처
+
+tmux 세션을 "한 번 토글하면 계속 도는 작업" 슬롯처럼 활용. polling, 배치 잡, 인프라 대기 작업을 별도 터미널 창 띄워두지 않고, 쉘 프롬프트 안에서 살 필요 없이 메뉴바에서 관리.
+
+### 어디서 진가가 나오나
+
+- **OCI / 클라우드 인스턴스 생성** — `oci compute instance launch ...` 처럼 용량 확보될 때까지 polling 하는 스크립트. 몇 시간씩 돌릴 거 터미널 지키고 있지 않아도 됨.
+- **용량 polling** — AWS Spot / GCP preemptible / Vast.ai 등 목표 가격에 자원 잡힐 때까지 반복 시도.
+- **장시간 백업 / 데이터 동기화** — `rsync`, `restic`, `aws s3 sync` 로 대용량 데이터 처리. 시작만 시키고 detach.
+- **배치 잡** — 야간 DB 마이그레이션, 대규모 `terraform apply`, 개인 머신에서 돌리는 학습 루프.
+- **로컬 watcher / poller** — `gh run watch`, `kubectl logs -f`, 터미널 닫혀도 살아있어야 하는 반복 스크립트.
+
+### 사용 방법
+
+1. YAML 템플릿을 `~/Library/Application Support/muxbar/Templates/` 에 둠:
+
+```yaml
+name: OCI Create
+description: Oracle Cloud 인스턴스 생성 (용량 생길 때까지 polling)
+sessionNameHint: oci
+windows:
+  - name: create
+    command: ~/oci-create-instance.sh; exec $SHELL
+```
+
+2. 메뉴바에서 **New Session → OCI Create**. 세션이 즉시 떠서 메뉴바 아이콘에 세션 카운트가 +1.
+3. `⌘⇧1`-`⌘⇧9` 로 터미널에 attach, 또는 행을 클릭해 라이브 프리뷰. `⌃b d` 로 detach — 스크립트는 계속 돈다.
+4. **Closed-lid mode** 와 같이 켜면 노트북을 가방에 넣고 출퇴근하는 동안 스크립트가 알아서 끝남.
+
+`; exec $SHELL` 꼬리표는 스크립트가 끝나거나 Ctrl+C 로 중단됐을 때 인터랙티브 셸로 떨어지게 해서 출력을 보존 — window 가 닫혀버려서 결과 못 보는 사고 방지.
+
+YAML 스키마 상세는 [사용자 템플릿](#사용자-템플릿) 섹션 참고.
 
 ## 요구사항
 
@@ -234,21 +270,7 @@ windows:
 - 파일명이 `_` 로 시작하면 로더가 무시 (`_example.yaml` 같은 참고용 파일 용도)
 - 메뉴에서 reload: **New Session → Reload Templates**
 - 폴더 열기: **New Session → Edit Templates…**
-
-### 장시간 실행 스크립트 래핑
-
-polling / watcher / 1회성 설치 스크립트처럼 백그라운드에서 계속 돌려두고 싶은 작업에 잘 맞습니다. `command` 뒤에 `; exec $SHELL` 을 붙이면 스크립트가 끝나거나 Ctrl+C 로 중단됐을 때 window 가 닫히지 않고 인터랙티브 셸로 떨어져 출력을 그대로 확인할 수 있습니다.
-
-```yaml
-name: OCI Create
-description: Oracle Cloud 인스턴스 생성 (용량 생길 때까지 polling)
-sessionNameHint: oci
-windows:
-  - name: create
-    command: ~/oci-create-instance.sh; exec $SHELL
-```
-
-세션이 메뉴바에 바로 뜨기 때문에, detach / re-attach 를 반복해도 스크립트는 계속 돌아갑니다.
+- 실제 활용 예시(OCI polling, 용량 대기, 백업)는 위 [장시간 실행 스크립트 런처](#long-running-script-launcher) 섹션 참고.
 
 ## 설계 & 문서
 

@@ -4,6 +4,8 @@
 
 > A native macOS menu bar app for tmux session management + caffeinate toggle.
 
+**Use it for:** tmux session manager · Keep Awake toggle · closed-lid mode (lid shut, work running) · **long-running script launcher** (OCI / cloud capacity polling / backups / batch jobs).
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
@@ -21,7 +23,7 @@
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
 - **Closed-lid mode** — Toss the laptop in your bag and keep your build / CI / remote session running. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit. See [Closed-lid mode](#closed-lid-mode-detailed) below.
 - **Multilingual** — English + 한국어. Settings → Language to switch (Auto / English / 한국어).
-- **Templates** — Built-in and user-defined session layouts (YAML). New Session → pick a template.
+- **Templates / script launcher** — Built-in + user-defined session layouts (YAML). Use them as one-click toggles for long-running scripts (OCI instance creation, cloud capacity polling, backups, batch jobs) — launch from the menu bar, detach/re-attach anytime, the script keeps running. See [Long-running script launcher](#long-running-script-launcher) below.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
 - **Open at Login** — Registers as a macOS Login Item under Settings (when installed as a bundled `.app`).
 
@@ -127,6 +129,40 @@ muxbar tries `sudo -n pmset` first; if the rule is set, it runs without a prompt
 To revert: `sudo rm /etc/sudoers.d/muxbar`.
 
 Security scope: only `pmset` (system sleep policy) is allowed without password — file system, network, process, and user permissions are not affected.
+
+<a id="long-running-script-launcher"></a>
+## Long-running script launcher
+
+Use tmux sessions as one-click toggles for scripts that have to keep running — polling, batch jobs, infrastructure waits — without leaving a terminal window open or living inside a shell prompt.
+
+### When it shines
+
+- **OCI / cloud instance creation** — `oci compute instance launch ...` that retries until capacity opens up. Hours of polling, no terminal to babysit.
+- **Capacity polling** — AWS Spot / GCP preemptible / Vast.ai loops that keep trying until you get the resource at your target price.
+- **Long backups / data sync** — `rsync`, `restic`, `aws s3 sync` of large datasets. Kick off and detach.
+- **Batch jobs** — overnight DB migrations, large `terraform apply`, training loops you launched from a personal box.
+- **Local watchers / pollers** — `gh run watch`, `kubectl logs -f`, repeatable scripts that should outlive a terminal close.
+
+### How
+
+1. Drop a YAML template under `~/Library/Application Support/muxbar/Templates/`:
+
+```yaml
+name: OCI Create
+description: Oracle Cloud instance create (polling until capacity is available)
+sessionNameHint: oci
+windows:
+  - name: create
+    command: ~/oci-create-instance.sh; exec $SHELL
+```
+
+2. **New Session → OCI Create** in the menu bar. The session appears immediately, with a count badge on the icon.
+3. `⌘⇧1`-`⌘⇧9` to attach in your terminal, or click the row for a live preview. Detach with `⌃b d` — the script keeps running.
+4. Pair with **Closed-lid mode** to toss the laptop in your bag and let the script finish on the way home.
+
+The `; exec $SHELL` tail drops you into an interactive shell when the script finishes (or you Ctrl+C it) so the output stays — no surprise window close.
+
+See [Custom templates](#custom-templates) for the YAML schema.
 
 ## Requirements
 
@@ -234,21 +270,7 @@ windows:
 - Files starting with `_` are ignored (so `_example.yaml` stays as a reference)
 - Reload via menu: **New Session → Reload Templates**
 - Open the folder: **New Session → Edit Templates…**
-
-### Wrapping long-running scripts
-
-Templates are a good fit for scripts you want to keep running in the background — pollers, watchers, one-shot installers. Append `; exec $SHELL` so the window drops into an interactive shell when the script finishes (or you Ctrl+C it), instead of closing and losing the output.
-
-```yaml
-name: OCI Create
-description: Oracle Cloud instance create (polling until capacity is available)
-sessionNameHint: oci
-windows:
-  - name: create
-    command: ~/oci-create-instance.sh; exec $SHELL
-```
-
-The session shows up in the menu bar immediately — detach and re-attach any time, the script keeps running.
+- For real-world examples (OCI polling, capacity wait, backups) see [Long-running script launcher](#long-running-script-launcher) above.
 
 ## Design & documentation
 
