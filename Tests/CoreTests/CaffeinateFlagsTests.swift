@@ -2,8 +2,8 @@ import XCTest
 @testable import Core
 
 final class CaffeinateFlagsTests: XCTestCase {
-    func test_default_isDIMS() {
-        XCTAssertEqual(CaffeinateFlags.default.cliArgs, "-dims")
+    func test_default_isDIMSU() {
+        XCTAssertEqual(CaffeinateFlags.default.cliArgs, "-dimsu")
     }
 
     func test_empty_producesEmptyString() {

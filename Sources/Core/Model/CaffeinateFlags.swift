@@ -15,7 +15,7 @@ public struct CaffeinateFlags: Sendable, Equatable, Hashable, Codable {
         self.preventUserIdleSleep = u
     }
 
-    public static let `default` = CaffeinateFlags(d: true, i: true, m: true, s: true, u: false)
+    public static let `default` = CaffeinateFlags(d: true, i: true, m: true, s: true, u: true)
 
     public var cliArgs: String {
         var chars = ""
