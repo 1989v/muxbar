@@ -108,11 +108,15 @@ Functionally similar — both keep the CPU running with the lid closed — but t
 |---|---|---|
 | Trigger | Auto when AC + external display + external keyboard/mouse all plugged in | Manual toggle |
 | External display required | **Yes** | No |
-| Display while lid closed | Output to external monitor | Off (lid sensor) |
+| Display while lid closed | Output to external monitor | None if no external display; **routes to external monitor if one is plugged in** |
+| AC required | **Yes** | No |
+| External keyboard/mouse required | **Yes** | No |
 | CPU while lid closed | Running | Running |
 | Auto-off | Lid open / external display unplug | Timer / AC unplug / lid open |
 
-Apple's clamshell mode is for "MacBook on a stand at my desk." Closed-lid mode is for "MacBook in a bag."
+**Bonus — closed-lid mode is a superset of Apple's clamshell.** If you happen to plug in an external display while closed-lid mode is on, macOS routes output there automatically — same desk-mode experience as Apple's clamshell, **without** Apple's "AC + external keyboard + external mouse" gate. The single toggle covers both *bag mode* (headless, on battery) and *desk mode* (external monitor, no peripherals required).
+
+Apple's clamshell mode is for "MacBook on a stand at my desk with full peripherals." Closed-lid mode is for "MacBook in a bag" or "MacBook on the desk with just an HDMI cable."
 
 ### Cost / setup
 
