@@ -53,6 +53,9 @@ public final class AppState: ObservableObject {
         self.templateStore = TemplateStore()
         self.hotKeyCenter = HotKeyCenter()
         self.notificationService = NotificationService()
+        self.closedLidStore.onPmsetRestoreNeeded = { [notificationService = self.notificationService] in
+            notificationService.postPmsetRestoreNeeded()
+        }
         self.loginItemService = LoginItemService()
         self.localeService = LocaleService()
 
@@ -129,7 +132,7 @@ public final class AppState: ObservableObject {
     public func turnOffClosedLid() {
         guard let client = controlClient else { return }
         Task {
-            await closedLidStore.forceOff(sessionProvider: client)
+            await closedLidStore.forceOff(sessionProvider: client, trigger: .manual)
             try? await Task.sleep(nanoseconds: 200_000_000)
             await sessionStore.refreshCaffeinate(from: client)
         }
@@ -137,7 +140,7 @@ public final class AppState: ObservableObject {
 
     public func turnOffClosedLidAndWait() async {
         guard let client = controlClient else { return }
-        await closedLidStore.forceOff(sessionProvider: client)
+        await closedLidStore.forceOff(sessionProvider: client, trigger: .manual)
     }
 
     public func startPreview(for session: TmuxSession) {

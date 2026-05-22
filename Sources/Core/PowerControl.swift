@@ -4,6 +4,7 @@ import AppKit
 public enum PowerControl {
     public enum Error: Swift.Error, Equatable {
         case userCancelled
+        case passwordRequired
         case scriptFailed(String)
     }
 
@@ -24,9 +25,12 @@ public enum PowerControl {
         try run(disable: true)
     }
 
+    /// - parameter allowPrompt: false면 sudo -n 만 시도. NOPASSWD 룰 없으면 `.passwordRequired` throw —
+    ///   타이머/AC/lid 같은 자동 trigger 에서 password dialog 가 뜨는 걸 막기 위한 옵션.
     @MainActor
-    public static func enableSystemSleep() async throws {
+    public static func enableSystemSleep(allowPrompt: Bool = true) async throws {
         if runSudoNoPrompt(disable: false) { return }
+        guard allowPrompt else { throw Error.passwordRequired }
         try run(disable: false)
     }
 
@@ -67,5 +71,7 @@ public enum PowerControl {
 public struct DefaultPowerController: ClosedLidStore.PowerController {
     public init() {}
     public func disableSystemSleep() async throws { try await PowerControl.disableSystemSleep() }
-    public func enableSystemSleep() async throws { try await PowerControl.enableSystemSleep() }
+    public func enableSystemSleep(allowPrompt: Bool) async throws {
+        try await PowerControl.enableSystemSleep(allowPrompt: allowPrompt)
+    }
 }

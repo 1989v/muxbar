@@ -4,7 +4,7 @@
 
 > A native macOS menu bar app for tmux session management + caffeinate toggle.
 
-**Use it for:** tmux session manager · Keep Awake toggle · closed-lid mode (lid shut, work running) · **long-running script launcher** (OCI / cloud capacity polling / backups / batch jobs).
+**Use it for:** tmux session manager · Keep Awake toggle · **headless clamshell** (closed-lid mode — no external display required) · **long-running script launcher** (OCI / cloud capacity polling / backups / batch jobs).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
@@ -21,7 +21,7 @@
 - **Kill** — Drop a session from the menu
 - **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
-- **Closed-lid mode** — Toss the laptop in your bag and keep your build / CI / remote session running. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit. See [Closed-lid mode](#closed-lid-mode-detailed) below.
+- **Closed-lid mode (headless clamshell)** — A "clamshell-without-the-external-display" toggle: keep the CPU running with the lid shut so your build / CI / remote session survives a bag commute. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit — timer expiry never blocks on a password prompt. See [Closed-lid mode](#closed-lid-mode-detailed) below.
 - **Multilingual** — English + 한국어. Settings → Language to switch (Auto / English / 한국어).
 - **Templates / script launcher** — Built-in + user-defined session layouts (YAML). Use them as one-click toggles for long-running scripts (OCI instance creation, cloud capacity polling, backups, batch jobs) — launch from the menu bar, detach/re-attach anytime, the script keeps running. See [Long-running script launcher](#long-running-script-launcher) below.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
@@ -50,7 +50,7 @@
   ├──────────────────────────────┤
   │ ☕  Keep Awake          ON    │   ← toggle (⌘⇧A)
   ├──────────────────────────────┤
-  │ 🔒  Closed-lid mode     OFF   │   ← prevent sleep on lid close
+  │ 🔒  Closed-lid mode     OFF  │   ← prevent sleep on lid close
   ├──────────────────────────────┤
   │ ⊞  New Session          ▸    │   ← templates submenu
   ├──────────────────────────────┤
@@ -96,9 +96,13 @@ The display is intentionally **not** kept on — `-d` is omitted. With the lid c
 | 💻 Lid opens | You're back at the laptop — flip back to normal sleep policy |
 | 🚪 muxbar quits | `applicationShouldTerminate` waits for `pmset` to be restored before exiting |
 
-If the user cancels the admin password prompt during turn-off the state stays ON and the AC/lid monitors are re-armed — no zombie state.
+**Manual OFF**: if you cancel the admin password prompt the state stays ON and the AC/lid monitors are re-armed — no zombie state.
+
+**Auto-off (timer / AC / lid)**: no password dialog is ever shown. `sudo -n pmset` is attempted silently — if the NOPASSWD rule (below) is set it succeeds; if not, the caffeinate session is killed, state goes to OFF, and a notification asks you to toggle OFF once from the menu to restore `pmset`. The timer's "off after N minutes" promise is honored unconditionally.
 
 ### macOS clamshell mode (Apple's own) vs. this
+
+Functionally similar — both keep the CPU running with the lid closed — but the trigger and intent differ. Closed-lid mode is essentially a **headless clamshell** (`caffeinate -is` + `pmset disablesleep 1`) that works without an external display, so the laptop can keep working inside a bag or on AC alone.
 
 | | macOS clamshell mode | Closed-lid mode |
 |---|---|---|
@@ -106,6 +110,7 @@ If the user cancels the admin password prompt during turn-off the state stays ON
 | External display required | **Yes** | No |
 | Display while lid closed | Output to external monitor | Off (lid sensor) |
 | CPU while lid closed | Running | Running |
+| Auto-off | Lid open / external display unplug | Timer / AC unplug / lid open |
 
 Apple's clamshell mode is for "MacBook on a stand at my desk." Closed-lid mode is for "MacBook in a bag."
 
@@ -124,7 +129,7 @@ echo "$(whoami) ALL = (root) NOPASSWD: /usr/bin/pmset" | sudo tee /etc/sudoers.d
 sudo chmod 440 /etc/sudoers.d/muxbar
 ```
 
-muxbar tries `sudo -n pmset` first; if the rule is set, it runs without a prompt. Without the rule, muxbar falls back to the AppleScript admin dialog (current default behavior).
+muxbar tries `sudo -n pmset` first; if the rule is set it runs without a prompt. For **manual OFF** the AppleScript admin dialog is used as a fallback when the rule is missing. **Auto-off (timer / AC / lid)** never shows a dialog — without the rule, the caffeinate session is killed and a notification is posted; you restore `pmset` on the next manual OFF toggle.
 
 To revert: `sudo rm /etc/sudoers.d/muxbar`.
 

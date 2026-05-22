@@ -14,11 +14,22 @@ public final class ClosedLidStore: ObservableObject {
 
     public protocol PowerController: Sendable {
         func disableSystemSleep() async throws
-        func enableSystemSleep() async throws
+        func enableSystemSleep(allowPrompt: Bool) async throws
+    }
+
+    /// forceOff 호출 컨텍스트. password dialog 노출 여부와 cancel 처리 분기에 사용.
+    public enum Trigger {
+        /// 사용자가 직접 OFF 토글 — dialog OK, cancel 시 state .on 유지.
+        case manual
+        /// timer 만료 / AC 분리 / lid open — silent only, 실패해도 state .off 로 정리.
+        case auto
     }
 
     @Published public private(set) var state: State = .off
     @Published public private(set) var isToggling: Bool = false
+
+    /// auto trigger 에서 pmset 복원 실패(NOPASSWD 미설정) 시 호출. UI 측 notification 발송용.
+    public var onPmsetRestoreNeeded: (@MainActor () -> Void)?
 
     private let power: any PowerController
     private let preferences: ClosedLidPreferences
@@ -88,10 +99,10 @@ public final class ClosedLidStore: ObservableObject {
     }
 
     /// 자동해제 트리거 (timer/AC/lid) 공통 진입점. 마지막 sessionProvider 가 살아있으면
-    /// 그걸로 forceOff, 없으면 pmset 만 복원.
+    /// 그걸로 forceOff, 없으면 pmset 만 silent 복원.
     private func forceOffViaTrigger() async {
         if let provider = lastSessionProvider as? (any SessionProvider) {
-            await forceOff(sessionProvider: provider)
+            await forceOff(sessionProvider: provider, trigger: .auto)
             return
         }
         // sessionProvider 가 deallocate → pmset 만 복원, state .off.
@@ -99,7 +110,12 @@ public final class ClosedLidStore: ObservableObject {
         isToggling = true
         defer { isToggling = false }
 
-        try? await power.enableSystemSleep()
+        do {
+            try await power.enableSystemSleep(allowPrompt: false)
+        } catch {
+            // NOPASSWD 미설정이면 .passwordRequired — UI 측에 notification 발송
+            onPmsetRestoreNeeded?()
+        }
         acMonitor.stop()
         lidMonitor.stop()
         expirationTask?.cancel()
@@ -108,7 +124,7 @@ public final class ClosedLidStore: ObservableObject {
         lastSessionProvider = nil
     }
 
-    public func forceOff(sessionProvider: any SessionProvider) async {
+    public func forceOff(sessionProvider: any SessionProvider, trigger: Trigger = .manual) async {
         guard state.isOn, !isToggling else { return }
         isToggling = true
         defer { isToggling = false }
@@ -118,15 +134,22 @@ public final class ClosedLidStore: ObservableObject {
         acMonitor.stop()
         lidMonitor.stop()
 
+        let allowPrompt = (trigger == .manual)
         do {
-            try await power.enableSystemSleep()
+            try await power.enableSystemSleep(allowPrompt: allowPrompt)
         } catch PowerControl.Error.userCancelled {
             logger.warning("enableSystemSleep cancelled by user — aborting forceOff, monitors 재무장")
-            // 사용자 cancel 은 "OFF 안 함" 의도이지 자동해제 비활성 의도가 아님 → AC/lid monitor 재구독.
-            // timer 는 expiresAt 잔여 계산 복잡 + 사용 빈도 낮아 후속 enhancement 로 미루고 여기선 미재무장.
+            // manual cancel 만 도달 (auto 는 prompt 없어 .userCancelled 안 남). "OFF 안 함" 의도 →
+            // state .on 유지 + AC/lid monitor 재구독. timer 는 expiresAt 잔여 계산 복잡 + 사용 빈도 낮아
+            // 후속 enhancement 로 미루고 여기선 미재무장.
             acMonitor.onACDisconnect { [weak self] in Task { await self?.forceOffViaTrigger() } }
             lidMonitor.onLidOpen     { [weak self] in Task { await self?.forceOffViaTrigger() } }
             return
+        } catch PowerControl.Error.passwordRequired {
+            // auto trigger + NOPASSWD 미설정. pmset 은 stale 인 채로 두고 caffeinate 만 kill,
+            // state .off 로 정리. UI 가 사용자에게 알림 발송.
+            logger.warning("auto trigger: pmset 복원 비밀번호 필요 — caffeinate kill 후 state .off")
+            onPmsetRestoreNeeded?()
         } catch {
             logger.warning("enableSystemSleep failed: \(error.localizedDescription)")
             // 비-cancel 실패: kill 진행 + state .off (UI 가 stuck 되지 않도록)

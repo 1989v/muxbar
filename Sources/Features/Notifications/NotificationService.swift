@@ -66,6 +66,15 @@ public final class NotificationService {
         lastActivityByPane[paneId] = .now
     }
 
+    /// Closed-lid 타이머 만료(또는 AC/lid 자동 트리거) 시 pmset 복원에 password 가 필요할 때 호출.
+    /// NOPASSWD 룰 미설정 사용자에게 stale pmset 상태를 알리는 용도.
+    public func postPmsetRestoreNeeded() {
+        postNotification(
+            title: "Closed lid mode 종료됨",
+            body: "pmset 복원에 비밀번호가 필요합니다. 메뉴에서 OFF 토글로 다시 시도하세요."
+        )
+    }
+
     private func checkIdle(store: SessionStore) async {
         // v0.1: idle 검출만, dedupe 는 v0.2 에서 처리 예정 (로그 노이즈 방지 위해 알림 미발송)
         _ = store

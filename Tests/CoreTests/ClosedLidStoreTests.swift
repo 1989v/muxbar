@@ -30,15 +30,20 @@ final class FakeSessionProvider: SessionProvider, @unchecked Sendable {
 final class FakePowerController: ClosedLidStore.PowerController, @unchecked Sendable {
     var disableCalls = 0
     var enableCalls = 0
+    var lastAllowPrompt: Bool?
     var shouldThrowOnDisable: Error?
     var shouldThrowOnEnable: Error?
+    /// allowPrompt=false 일 때만 던질 에러. nil 이면 shouldThrowOnEnable 사용.
+    var shouldThrowOnEnableSilent: Error?
 
     func disableSystemSleep() async throws {
         disableCalls += 1
         if let e = shouldThrowOnDisable { throw e }
     }
-    func enableSystemSleep() async throws {
+    func enableSystemSleep(allowPrompt: Bool) async throws {
         enableCalls += 1
+        lastAllowPrompt = allowPrompt
+        if !allowPrompt, let e = shouldThrowOnEnableSilent { throw e }
         if let e = shouldThrowOnEnable { throw e }
     }
 }
@@ -172,18 +177,60 @@ final class ClosedLidStoreTests: XCTestCase {
         XCTAssertEqual(store.state, .off)
     }
 
-    func test_forceOff_userCancelled_stateStaysOn() async {
+    func test_forceOff_manual_userCancelled_stateStaysOn() async {
         let power = FakePowerController()
         let provider = FakeSessionProvider()
         let store = ClosedLidStore(power: power)
         await store.turnOn(duration: nil, sessionProvider: provider)
 
         power.shouldThrowOnEnable = PowerControl.Error.userCancelled
-        await store.forceOff(sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
 
         XCTAssertEqual(power.enableCalls, 1)
-        XCTAssertEqual(store.state, .on(expiresAt: nil))  // CRITICAL #1 검증
+        XCTAssertEqual(power.lastAllowPrompt, true)  // manual → prompt 허용
+        XCTAssertEqual(store.state, .on(expiresAt: nil))  // manual cancel: state 유지
         XCTAssertEqual(provider.killedSessions.count, 0)  // kill 도 진행 안 됨
+    }
+
+    /// auto trigger (timer/AC/lid) 에서 NOPASSWD 미설정 → .passwordRequired 던져도
+    /// state 는 .off 로 정리되고 caffeinate kill + onPmsetRestoreNeeded 콜백 발화.
+    func test_forceOff_auto_passwordRequired_stateGoesOffAndFiresCallback() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        var callbackFired = false
+        store.onPmsetRestoreNeeded = { callbackFired = true }
+        power.shouldThrowOnEnableSilent = PowerControl.Error.passwordRequired
+
+        await store.forceOff(sessionProvider: provider, trigger: .auto)
+
+        XCTAssertEqual(power.enableCalls, 1)
+        XCTAssertEqual(power.lastAllowPrompt, false)  // auto → silent only
+        XCTAssertEqual(store.state, .off)
+        XCTAssertEqual(provider.killedSessions, ["_muxbar-closed-lid"])
+        XCTAssertTrue(callbackFired)
+    }
+
+    /// 자동 expiration timer 가 발화하는 forceOffViaTrigger 경로에서도 동일하게
+    /// password 없이 .off 로 가는지 검증.
+    func test_timerExpiry_passwordRequired_stateGoesOff() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+        power.shouldThrowOnEnableSilent = PowerControl.Error.passwordRequired
+        var callbackFired = false
+        store.onPmsetRestoreNeeded = { callbackFired = true }
+
+        await store.turnOn(duration: .milliseconds(100), sessionProvider: provider)
+        XCTAssertTrue(store.state.isOn)
+
+        try await Task.sleep(nanoseconds: 250_000_000)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertEqual(power.lastAllowPrompt, false)
+        XCTAssertTrue(callbackFired)
     }
 
     func test_turnOn_withShortDuration_autoForceOffAfterExpiry() async throws {
@@ -254,7 +301,7 @@ final class ClosedLidStoreTests: XCTestCase {
         XCTAssertEqual(store.state, .off)
     }
 
-    func test_forceOff_userCancelled_acMonitorRemainsArmed() async throws {
+    func test_forceOff_manual_userCancelled_acMonitorRemainsArmed() async throws {
         let power = FakePowerController()
         let provider = FakeSessionProvider()
         let acMon = FakePowerSourceMonitor()
@@ -263,7 +310,7 @@ final class ClosedLidStoreTests: XCTestCase {
         await store.turnOn(duration: nil, sessionProvider: provider)
 
         power.shouldThrowOnEnable = PowerControl.Error.userCancelled
-        await store.forceOff(sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
 
         // monitor 재무장 확인 — handler 다시 등록됨
         XCTAssertNotNil(acMon.startedHandler)

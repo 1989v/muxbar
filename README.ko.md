@@ -4,7 +4,7 @@
 
 > tmux 세션 관리 + caffeinate 토글을 메뉴바에서. macOS 네이티브 앱.
 
-**이런 용도로:** tmux 세션 매니저 · Keep Awake 토글 · closed-lid 모드 (덮개 닫고도 작업 유지) · **장시간 실행 스크립트 런처** (OCI / 클라우드 용량 polling / 백업 / 배치 잡).
+**이런 용도로:** tmux 세션 매니저 · Keep Awake 토글 · **헤드리스 클램쉘** (closed-lid 모드 — 외부 디스플레이 없이도 덮개 닫고 작업 유지) · **장시간 실행 스크립트 런처** (OCI / 클라우드 용량 polling / 백업 / 배치 잡).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![macOS 13+](https://img.shields.io/badge/macOS-13.0+-blue.svg)](https://www.apple.com/macos/)
@@ -21,7 +21,7 @@
 - **Kill** — 메뉴에서 바로 세션 종료
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
-- **Closed-lid mode** — 노트북을 가방에 넣은 채로도 빌드 / CI / 원격 세션이 계속 돌게. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
+- **Closed-lid mode (헤드리스 클램쉘)** — "외부 디스플레이 없이 동작하는 클램쉘" 토글. 덮개 닫고도 CPU 가 계속 돌아 빌드 / CI / 원격 세션이 가방 안 출퇴근을 견딤. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료 — 타이머 만료는 비밀번호 prompt 에 막히지 않음. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
 - **다국어 지원** — English + 한국어. Settings → 언어 에서 전환 (자동 / English / 한국어).
 - **템플릿 / 스크립트 런처** — 빌트인 + 사용자 YAML 템플릿. 장시간 실행되는 스크립트(OCI 인스턴스 생성, 클라우드 용량 polling, 백업, 배치 잡)를 메뉴바 토글처럼 한 클릭으로 띄우고 detach/re-attach — 스크립트는 계속 돈다. [장시간 실행 스크립트 런처](#long-running-script-launcher) 섹션 참고.
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
@@ -39,24 +39,24 @@
 ```
   ┌ ▣ muxbar                   ● ┐  ← 헤더 (이름 + 연결 상태 dot)
   ├──────────────────────────────┤
-  │ ● api                1w  ⋯  │   ← attached (초록 dot)
+  │ ● api                1w  ⋯   │   ← attached (초록 dot)
   │    /Users                    │      cwd 는 서브텍스트
   ├──────────────────────────────┤
-  │ ○ dev                2w  ⋯  │   ← detached
+  │ ○ dev                2w  ⋯   │   ← detached
   │    /Users/kgd/msa            │
   ├──────────────────────────────┤
-  │ ○ logs               1w  ⋯  │
+  │ ○ logs               1w  ⋯   │
   │    /var/log                  │
   ├──────────────────────────────┤
-  │ ☕  Keep Awake          ON  │   ← 토글 (⌘⇧A)
+  │ ☕  Keep Awake          ON    │   ← 토글 (⌘⇧A)
   ├──────────────────────────────┤
-  │ 🔒  Closed-lid mode     OFF │   ← lid 닫고도 sleep 차단
+  │ 🔒  Closed-lid mode     OFF  │   ← lid 닫고도 sleep 차단
   ├──────────────────────────────┤
-  │ ⊞  New Session          ▸   │   ← 템플릿 서브메뉴
+  │ ⊞  New Session          ▸    │   ← 템플릿 서브메뉴
   ├──────────────────────────────┤
-  │ ⚙  Settings             ▸   │   ← Open at Login 등
+  │ ⚙  Settings             ▸    │   ← Open at Login 등
   ├──────────────────────────────┤
-  │    Quit muxbar          ⌘Q  │
+  │    Quit muxbar          ⌘Q   │
   └──────────────────────────────┘
 ```
 
@@ -96,9 +96,13 @@ MacBook 덮개를 닫고도 시스템 sleep 없이 백그라운드 작업을 진
 | 💻 lid 열림 | 사용자가 돌아왔으니 일반 sleep 정책 복귀 |
 | 🚪 muxbar 종료 | `applicationShouldTerminate` 가 `pmset` 복원 끝날 때까지 대기 후 종료 |
 
-OFF 도중 사용자가 admin 비밀번호 prompt 를 cancel 하면 state 는 ON 유지 + AC/lid monitor 재무장 — zombie 상태 안 남음.
+**수동 OFF**: 사용자가 admin 비밀번호 prompt 를 cancel 하면 state 는 ON 유지 + AC/lid monitor 재무장 — zombie 상태 안 남음.
+
+**자동 해제 (타이머 / AC / lid)**: 비밀번호 dialog 를 띄우지 않음. `sudo -n pmset` 으로 silent 시도 — 아래 NOPASSWD 룰이 설정돼 있으면 통과, 미설정이면 caffeinate 세션 kill + state OFF + "메뉴에서 OFF 토글로 pmset 복원 다시 시도" 알림 발송. **"N분 뒤 자동 종료" 약속은 비밀번호 입력 없이도 무조건 지켜짐.**
 
 ### macOS 정식 클램쉘 모드와 비교
+
+기능적으로 유사 — 둘 다 lid 닫힌 상태에서 CPU 를 깨워 둠 — 하지만 발동 조건과 의도가 다름. Closed-lid mode 는 사실상 **외부 디스플레이 없이 동작하는 헤드리스 클램쉘** (`caffeinate -is` + `pmset disablesleep 1`) 이라, 노트북을 가방에 넣은 채로도 / AC 만 연결한 채로도 작업이 살아남음.
 
 | | macOS 클램쉘 모드 (Apple) | Closed-lid mode |
 |---|---|---|
@@ -106,6 +110,7 @@ OFF 도중 사용자가 admin 비밀번호 prompt 를 cancel 하면 state 는 ON
 | 외부 디스플레이 | **필요** | 불필요 |
 | lid 닫힘 시 화면 | 외부 모니터로 출력 | 꺼짐 (lid 센서) |
 | lid 닫힘 시 CPU | 동작 | 동작 |
+| 자동 해제 | lid 열림 / 외부 디스플레이 분리 | 타이머 / AC 분리 / lid 열림 |
 
 Apple 의 클램쉘 모드는 "데스크에 거치된 노트북" 용. Closed-lid mode 는 "가방 안 노트북" 용.
 
@@ -124,7 +129,7 @@ echo "$(whoami) ALL = (root) NOPASSWD: /usr/bin/pmset" | sudo tee /etc/sudoers.d
 sudo chmod 440 /etc/sudoers.d/muxbar
 ```
 
-muxbar 가 먼저 `sudo -n pmset` 을 시도 → 룰이 있으면 prompt 없이 통과. 룰 미설정 시 AppleScript admin 다이얼로그로 fallback (기존 동작).
+muxbar 가 먼저 `sudo -n pmset` 을 시도 → 룰이 있으면 prompt 없이 통과. 수동 OFF 의 경우 룰 미설정이면 AppleScript admin 다이얼로그로 fallback. 자동 트리거(타이머/AC/lid)는 dialog 안 띄우고 caffeinate 만 정리 + 알림 발송 → 사용자가 알아서 다음 메뉴 토글에서 복원.
 
 해제: `sudo rm /etc/sudoers.d/muxbar`.
 
