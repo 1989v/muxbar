@@ -8,3 +8,7 @@ DerivedData/
 # build.sh 산출물
 /muxbar.app/
 /dist/
+
+# IDE / 작업 디렉토리 (muxbar 와 무관한 nested 작업물)
+.idea/
+/awesome-mac/
