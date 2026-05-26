@@ -213,6 +213,74 @@ final class ClosedLidStoreTests: XCTestCase {
         XCTAssertTrue(callbackFired)
     }
 
+    // MARK: - alsoStopKeepAwakeOnEnd 콜백
+
+    /// turnOn 시점에 alsoStopKeepAwakeOnEnd=true 로 켠 뒤, manual forceOff 가
+    /// 정상적으로 .off 로 갈 때 onEndShouldStopKeepAwake 콜백이 한 번 발화.
+    func test_manualForceOff_alsoStopKeepAwake_firesCallback() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        var callbackFires = 0
+        store.onEndShouldStopKeepAwake = { callbackFires += 1 }
+
+        await store.turnOn(duration: nil, alsoStopKeepAwakeOnEnd: true, sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertEqual(callbackFires, 1)
+    }
+
+    /// alsoStopKeepAwakeOnEnd=false 로 시작했으면 종료 시 콜백 발화하면 안 됨.
+    func test_manualForceOff_withoutAlsoStop_doesNotFireCallback() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        var callbackFired = false
+        store.onEndShouldStopKeepAwake = { callbackFired = true }
+
+        await store.turnOn(duration: nil, alsoStopKeepAwakeOnEnd: false, sessionProvider: provider)
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertFalse(callbackFired)
+    }
+
+    /// 타이머 만료 (auto trigger) 경로에서도 alsoStopKeepAwakeOnEnd=true 면 콜백 발화.
+    func test_timerExpiry_alsoStopKeepAwake_firesCallback() async throws {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        var callbackFires = 0
+        store.onEndShouldStopKeepAwake = { callbackFires += 1 }
+
+        await store.turnOn(duration: .milliseconds(100), alsoStopKeepAwakeOnEnd: true, sessionProvider: provider)
+        try await Task.sleep(nanoseconds: 250_000_000)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertEqual(callbackFires, 1)
+    }
+
+    /// manual cancel 로 OFF 안 됐을 때는(state 가 .on 유지) 콜백 발화하면 안 됨.
+    func test_manualForceOff_userCancelled_doesNotFireCallback() async {
+        let power = FakePowerController()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power)
+
+        var callbackFired = false
+        store.onEndShouldStopKeepAwake = { callbackFired = true }
+
+        await store.turnOn(duration: nil, alsoStopKeepAwakeOnEnd: true, sessionProvider: provider)
+        power.shouldThrowOnEnable = PowerControl.Error.userCancelled
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
+
+        XCTAssertEqual(store.state, .on(expiresAt: nil))  // cancel → ON 유지
+        XCTAssertFalse(callbackFired)  // OFF 안 됐으니 콜백도 X
+    }
+
     /// 자동 expiration timer 가 발화하는 forceOffViaTrigger 경로에서도 동일하게
     /// password 없이 .off 로 가는지 검증.
     func test_timerExpiry_passwordRequired_stateGoesOff() async throws {

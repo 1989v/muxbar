@@ -24,6 +24,11 @@ public enum L {
     public static var closedLidDuration4h: String    { lookup("closedLid.duration.4h") }
     public static var closedLidDuration8h: String    { lookup("closedLid.duration.8h") }
     public static var closedLidDurationInf: String   { lookup("closedLid.duration.inf") }
+    public static var closedLidDurationCustom: String                   { lookup("closedLid.duration.custom") }
+    public static var closedLidDurationCustomMinutesPlaceholder: String { lookup("closedLid.duration.customMinutesPlaceholder") }
+    public static var closedLidDurationCustomStart: String              { lookup("closedLid.duration.customStart") }
+    public static var closedLidDurationCustomBack: String               { lookup("closedLid.duration.customBack") }
+    public static var closedLidAlsoStopKeepAwake: String                { lookup("closedLid.alsoStopKeepAwake") }
     public static var closedLidStateOff: String      { lookup("closedLid.state.off") }
     public static var closedLidStateOnInf: String    { lookup("closedLid.state.onInf") }
     public static var closedLidSubtitle: String      { lookup("closedLid.subtitle") }
@@ -45,7 +50,9 @@ public enum L {
     public static var settingsOpenAtLoginUnavailable: String   { lookup("settings.openAtLogin.unavailable") }
     public static var settingsClosedLidSection: String         { lookup("settings.closedLidSection") }
     public static var settingsKeepDisplayAwake: String         { lookup("settings.keepDisplayAwake") }
+    public static var settingsKeepDisplayAwakeHelp: String     { lookup("settings.keepDisplayAwake.help") }
     public static var settingsPreventScreenSaver: String       { lookup("settings.preventScreenSaver") }
+    public static var settingsPreventScreenSaverHelp: String   { lookup("settings.preventScreenSaver.help") }
     public static var settingsLanguage: String                 { lookup("settings.language") }
     public static var settingsLanguageAuto: String             { lookup("settings.language.auto") }
     public static var settingsLanguageEn: String               { lookup("settings.language.en") }

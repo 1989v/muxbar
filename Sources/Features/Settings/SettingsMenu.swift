@@ -40,9 +40,11 @@ public struct SettingsMenu: View {
             Toggle(isOn: $closedLidPreferences.keepDisplayAwake) {
                 Text(L.settingsKeepDisplayAwake)
             }
+            .help(L.settingsKeepDisplayAwakeHelp)
             Toggle(isOn: $closedLidPreferences.preventScreenSaver) {
                 Text(L.settingsPreventScreenSaver)
             }
+            .help(L.settingsPreventScreenSaverHelp)
 
             Divider()
             Picker(selection: Binding(

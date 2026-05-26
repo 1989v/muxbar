@@ -31,6 +31,10 @@ public final class ClosedLidStore: ObservableObject {
     /// auto trigger 에서 pmset 복원 실패(NOPASSWD 미설정) 시 호출. UI 측 notification 발송용.
     public var onPmsetRestoreNeeded: (@MainActor () -> Void)?
 
+    /// closed-lid 종료 시점에 Keep Awake 도 같이 OFF 시켜야 할 때 호출.
+    /// turnOn 시점에 사용자가 체크한 의도가 발화 조건 — trigger 종류(manual/timer/AC/lid)와 무관.
+    public var onEndShouldStopKeepAwake: (@MainActor () -> Void)?
+
     private let power: any PowerController
     private let preferences: ClosedLidPreferences
     private let logger = MuxLogging.logger("Core.ClosedLidStore")
@@ -38,6 +42,8 @@ public final class ClosedLidStore: ObservableObject {
     private let acMonitor: PowerSourceMonitor
     private let lidMonitor: LidStateMonitor
     private weak var lastSessionProvider: AnyObject?
+    /// 이번 turnOn 세션이 끝날 때 Keep Awake 도 같이 OFF 시킬지. turnOn 시점 결정값.
+    private var alsoStopKeepAwakeOnEnd: Bool = false
 
     public init(
         power: any PowerController,
@@ -51,7 +57,11 @@ public final class ClosedLidStore: ObservableObject {
         self.lidMonitor = lidMonitor
     }
 
-    public func turnOn(duration: Duration?, sessionProvider: any SessionProvider) async {
+    public func turnOn(
+        duration: Duration?,
+        alsoStopKeepAwakeOnEnd: Bool = false,
+        sessionProvider: any SessionProvider
+    ) async {
         guard !state.isOn, !isToggling else { return }
         isToggling = true
         defer { isToggling = false }
@@ -75,6 +85,7 @@ public final class ClosedLidStore: ObservableObject {
         let expiresAt: Date? = duration.map { Date().addingTimeInterval(TimeInterval($0.components.seconds)) }
         state = .on(expiresAt: expiresAt)
         lastSessionProvider = sessionProvider as AnyObject
+        self.alsoStopKeepAwakeOnEnd = alsoStopKeepAwakeOnEnd
 
         if let duration {
             expirationTask = Task { [weak self] in
@@ -120,8 +131,18 @@ public final class ClosedLidStore: ObservableObject {
         lidMonitor.stop()
         expirationTask?.cancel()
         expirationTask = nil
+        finalizeOff()
+    }
+
+    /// state 를 .off 로 전이하면서 turnOn 시점 의도(alsoStopKeepAwakeOnEnd)를 발화한다.
+    /// state 가 실제로 .off 로 가는 모든 경로의 마지막 단계에서만 호출 — manual cancel 같은
+    /// "OFF 안 함" 경로에서는 호출하지 말 것.
+    private func finalizeOff() {
+        let shouldStopKeepAwake = alsoStopKeepAwakeOnEnd
+        alsoStopKeepAwakeOnEnd = false
         state = .off
         lastSessionProvider = nil
+        if shouldStopKeepAwake { onEndShouldStopKeepAwake?() }
     }
 
     public func forceOff(sessionProvider: any SessionProvider, trigger: Trigger = .manual) async {
@@ -161,7 +182,6 @@ public final class ClosedLidStore: ObservableObject {
             logger.warning("kill closed-lid session failed: \(error.localizedDescription)")
         }
 
-        state = .off
-        lastSessionProvider = nil
+        finalizeOff()
     }
 }

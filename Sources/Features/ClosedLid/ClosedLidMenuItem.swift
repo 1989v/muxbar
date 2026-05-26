@@ -3,18 +3,23 @@ import Core
 
 public struct ClosedLidMenuItem: View {
     @ObservedObject public var store: ClosedLidStore
-    public let onTurnOn: (Duration?) -> Void
+    @ObservedObject public var preferences: ClosedLidPreferences
+    public let onTurnOn: (Duration?, Bool) -> Void
     public let onTurnOff: () -> Void
 
     @State private var showingPicker = false
+    @State private var customMode = false
+    @State private var customMinutesText: String = ""
     @State private var now = Date()
 
     public init(
         store: ClosedLidStore,
-        onTurnOn: @escaping (Duration?) -> Void,
+        preferences: ClosedLidPreferences,
+        onTurnOn: @escaping (Duration?, Bool) -> Void,
         onTurnOff: @escaping () -> Void
     ) {
         self.store = store
+        self.preferences = preferences
         self.onTurnOn = onTurnOn
         self.onTurnOff = onTurnOff
     }
@@ -45,10 +50,14 @@ public struct ClosedLidMenuItem: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if store.state.isOn { onTurnOff() }
-            else { showingPicker = true }
+            else {
+                customMode = false
+                customMinutesText = String(preferences.lastCustomMinutes)
+                showingPicker = true
+            }
         }
         .popover(isPresented: $showingPicker, arrowEdge: .leading) {
-            durationPicker
+            if customMode { customDurationView } else { presetPickerView }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { date in
             if store.state.isOn { now = date }
@@ -70,20 +79,67 @@ public struct ClosedLidMenuItem: View {
         }
     }
 
-    private var durationPicker: some View {
+    private var presetPickerView: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L.closedLidDuration).font(.caption).foregroundStyle(.secondary)
+
+            Toggle(isOn: $preferences.alsoStopKeepAwakeOnEnd) {
+                Text(L.closedLidAlsoStopKeepAwake).font(.caption)
+            }
+            .toggleStyle(.checkbox)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+
+            Divider()
+
             ForEach(Self.durationOptions(), id: \.label) { opt in
                 Button(opt.label) {
                     showingPicker = false
-                    onTurnOn(opt.duration)
+                    onTurnOn(opt.duration, preferences.alsoStopKeepAwakeOnEnd)
                 }
                 .buttonStyle(.plain)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
             }
+
+            Button(L.closedLidDurationCustom) {
+                customMode = true
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
         }
         .padding(8)
+        .frame(minWidth: 220)
+    }
+
+    private var customDurationView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(L.closedLidDurationCustomBack) {
+                customMode = false
+            }
+            .buttonStyle(.plain)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            HStack {
+                TextField(L.closedLidDurationCustomMinutesPlaceholder, text: $customMinutesText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+                Text("min").foregroundStyle(.secondary).font(.caption)
+            }
+
+            Button(L.closedLidDurationCustomStart) {
+                guard let minutes = Int(customMinutesText.trimmingCharacters(in: .whitespaces)),
+                      minutes > 0 else { return }
+                preferences.lastCustomMinutes = minutes
+                showingPicker = false
+                onTurnOn(.seconds(minutes * 60), preferences.alsoStopKeepAwakeOnEnd)
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(12)
+        .frame(minWidth: 220)
     }
 
     private static func durationOptions() -> [(label: String, duration: Duration?)] {

@@ -19,6 +19,11 @@
 "closedLid.duration.4h"   = "4시간";
 "closedLid.duration.8h"   = "8시간";
 "closedLid.duration.inf"  = "∞ (수동 OFF 까지)";
+"closedLid.duration.custom"          = "사용자 지정…";
+"closedLid.duration.customMinutesPlaceholder" = "분 단위";
+"closedLid.duration.customStart"     = "시작";
+"closedLid.duration.customBack"      = "← 뒤로";
+"closedLid.alsoStopKeepAwake"        = "종료 시 Keep Awake 도 함께 끄기";
 
 // closed-lid state
 "closedLid.state.off"     = "OFF";
@@ -38,7 +43,9 @@
 "settings.openAtLogin.unavailable" = "시작 시 자동 실행 (.app 설치 후 활성화)";
 "settings.closedLidSection"        = "Closed-lid mode";
 "settings.keepDisplayAwake"        = "화면 켜둠";
+"settings.keepDisplayAwake.help"   = "caffeinate -d 추가 — lid 열려있는 동안 화면이 자동으로 꺼지지 않게 합니다. (lid 닫힌 상태에선 lid 센서가 hardware level 로 화면을 꺼서 효과 없음)";
 "settings.preventScreenSaver"      = "화면 보호기 차단";
+"settings.preventScreenSaver.help" = "caffeinate -u 추가 — declareUserActivity 로 user activity 를 지속 기록해서 화면 보호기 / 잠금 화면 발동을 차단합니다.";
 "settings.language"                = "언어";
 "settings.language.auto"           = "자동";
 "settings.language.en"             = "English";

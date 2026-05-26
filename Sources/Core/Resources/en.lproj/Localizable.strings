@@ -19,6 +19,11 @@
 "closedLid.duration.4h"   = "4 hours";
 "closedLid.duration.8h"   = "8 hours";
 "closedLid.duration.inf"  = "∞ (until manual off)";
+"closedLid.duration.custom"          = "Custom…";
+"closedLid.duration.customMinutesPlaceholder" = "minutes";
+"closedLid.duration.customStart"     = "Start";
+"closedLid.duration.customBack"      = "← Back";
+"closedLid.alsoStopKeepAwake"        = "Also stop Keep Awake on end";
 
 // closed-lid state
 "closedLid.state.off"     = "OFF";
@@ -38,7 +43,9 @@
 "settings.openAtLogin.unavailable" = "Open at Login (install .app to enable)";
 "settings.closedLidSection"        = "Closed-lid mode";
 "settings.keepDisplayAwake"        = "Keep display awake";
+"settings.keepDisplayAwake.help"   = "Adds caffeinate -d — keeps the display on while the lid is open. (No effect with lid closed — the lid sensor turns the display off in hardware.)";
 "settings.preventScreenSaver"      = "Prevent screen saver";
+"settings.preventScreenSaver.help" = "Adds caffeinate -u — declares user activity to suppress screensaver / lock screen.";
 "settings.language"                = "Language";
 "settings.language.auto"           = "Auto";
 "settings.language.en"             = "English";

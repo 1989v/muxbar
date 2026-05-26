@@ -64,6 +64,13 @@ public final class AppState: ObservableObject {
         } else {
             self.terminalAdapter = nil
         }
+
+        // self 캡처는 모든 stored property 초기화 후에. terminalAdapter 까지 끝난 다음 wire-up.
+        self.closedLidStore.onEndShouldStopKeepAwake = { [weak self] in
+            guard let self, let client = self.controlClient else { return }
+            guard self.awakeStore.isAwake(in: self.sessionStore) else { return }
+            Task { await self.awakeStore.toggle(in: self.sessionStore, via: client) }
+        }
     }
 
     public func bootstrap() async {
@@ -117,13 +124,17 @@ public final class AppState: ObservableObject {
         }
     }
 
-    public func turnOnClosedLid(duration: Duration?) {
+    public func turnOnClosedLid(duration: Duration?, alsoStopKeepAwakeOnEnd: Bool = false) {
         guard let client = controlClient else {
             sessionStore.apply(error: L.errorTmuxNotConnected)
             return
         }
         Task {
-            await closedLidStore.turnOn(duration: duration, sessionProvider: client)
+            await closedLidStore.turnOn(
+                duration: duration,
+                alsoStopKeepAwakeOnEnd: alsoStopKeepAwakeOnEnd,
+                sessionProvider: client
+            )
             try? await Task.sleep(nanoseconds: 200_000_000)
             await sessionStore.refreshCaffeinate(from: client)
         }

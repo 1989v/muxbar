@@ -42,4 +42,24 @@ final class ClosedLidPreferencesTests: XCTestCase {
         XCTAssertTrue(prefs2.keepDisplayAwake)
         XCTAssertTrue(prefs2.preventScreenSaver)
     }
+
+    func test_alsoStopKeepAwakeOnEnd_persists() {
+        let defaults = makeIsolatedDefaults()
+        let prefs1 = ClosedLidPreferences(defaults: defaults)
+        XCTAssertFalse(prefs1.alsoStopKeepAwakeOnEnd)  // default false
+        prefs1.alsoStopKeepAwakeOnEnd = true
+
+        let prefs2 = ClosedLidPreferences(defaults: defaults)
+        XCTAssertTrue(prefs2.alsoStopKeepAwakeOnEnd)
+    }
+
+    func test_lastCustomMinutes_defaultsTo90_andPersists() {
+        let defaults = makeIsolatedDefaults()
+        let prefs1 = ClosedLidPreferences(defaults: defaults)
+        XCTAssertEqual(prefs1.lastCustomMinutes, 90)  // default
+        prefs1.lastCustomMinutes = 45
+
+        let prefs2 = ClosedLidPreferences(defaults: defaults)
+        XCTAssertEqual(prefs2.lastCustomMinutes, 45)
+    }
 }

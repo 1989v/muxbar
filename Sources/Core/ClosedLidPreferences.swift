@@ -6,6 +6,8 @@ import Foundation
 public final class ClosedLidPreferences: ObservableObject {
     public static let keyDisplay = "closedLid.keepDisplayAwake"
     public static let keyScreensaver = "closedLid.preventScreenSaver"
+    public static let keyAlsoStopKeepAwakeOnEnd = "closedLid.alsoStopKeepAwakeOnEnd"
+    public static let keyLastCustomMinutes = "closedLid.lastCustomMinutes"
 
     /// `caffeinate -d` (display sleep 차단). lid open 상태에서 화면 안 끄고 싶을 때.
     @Published public var keepDisplayAwake: Bool {
@@ -17,12 +19,26 @@ public final class ClosedLidPreferences: ObservableObject {
         didSet { defaults.set(preventScreenSaver, forKey: Self.keyScreensaver) }
     }
 
+    /// closed-lid 종료 시점에 Keep Awake 도 함께 OFF. 사용자가 시작 시점에 체크.
+    /// 모든 종료 경로(manual/timer/AC/lid)에 일관 적용 — "시작 시 의식적 동의" 가 기준.
+    @Published public var alsoStopKeepAwakeOnEnd: Bool {
+        didSet { defaults.set(alsoStopKeepAwakeOnEnd, forKey: Self.keyAlsoStopKeepAwakeOnEnd) }
+    }
+
+    /// Custom duration picker 의 마지막 입력 값(분). 다음 picker open 시 prefill.
+    @Published public var lastCustomMinutes: Int {
+        didSet { defaults.set(lastCustomMinutes, forKey: Self.keyLastCustomMinutes) }
+    }
+
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.keepDisplayAwake = defaults.bool(forKey: Self.keyDisplay)
         self.preventScreenSaver = defaults.bool(forKey: Self.keyScreensaver)
+        self.alsoStopKeepAwakeOnEnd = defaults.bool(forKey: Self.keyAlsoStopKeepAwakeOnEnd)
+        let savedMinutes = defaults.integer(forKey: Self.keyLastCustomMinutes)
+        self.lastCustomMinutes = savedMinutes > 0 ? savedMinutes : 90
     }
 
     /// 현재 prefs 에 따른 caffeinate 명령. base flag 는 항상 `-is`.
