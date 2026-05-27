@@ -126,6 +126,12 @@ public struct ClosedLidMenuItem: View {
                 TextField(L.closedLidDurationCustomMinutesPlaceholder, text: $customMinutesText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 80)
+                    .onChange(of: customMinutesText) { newValue in
+                        // 숫자만 허용 + 5자리(최대 99999분 ≈ 69일) 클램프.
+                        let filtered = newValue.filter { $0.isNumber }
+                        let clamped = String(filtered.prefix(5))
+                        if clamped != newValue { customMinutesText = clamped }
+                    }
                 Text("min").foregroundStyle(.secondary).font(.caption)
             }
 
