@@ -15,6 +15,8 @@ public final class ClosedLidStore: ObservableObject {
     public protocol PowerController: Sendable {
         func disableSystemSleep() async throws
         func enableSystemSleep(allowPrompt: Bool) async throws
+        /// 현재 시스템 슬립이 꺼져있는지(`pmset SleepDisabled==1`). launch reconcile 게이트용.
+        func isSystemSleepDisabled() async -> Bool
     }
 
     /// forceOff 호출 컨텍스트. password dialog 노출 여부와 cancel 처리 분기에 사용.
@@ -66,9 +68,14 @@ public final class ClosedLidStore: ObservableObject {
         isToggling = true
         defer { isToggling = false }
 
+        // 복원 책임 마커를 pmset 호출 *전에* optimistic 으로 ON — disableSystemSleep 성공 후
+        // 마커 write 전 크래시 윈도우를 닫는다. false-positive(적용 안 됐는데 마커 true)는
+        // reconcile 이 실제 pmset 값으로 게이트하므로 무해(prompt 없이 마커만 정리).
+        preferences.sleepDisabledByUs = true
         do {
             try await power.disableSystemSleep()
         } catch {
+            preferences.sleepDisabledByUs = false  // 적용 실패 → 마커 롤백
             logger.warning("disableSystemSleep failed: \(error.localizedDescription)")
             return
         }
@@ -123,8 +130,9 @@ public final class ClosedLidStore: ObservableObject {
 
         do {
             try await power.enableSystemSleep(allowPrompt: false)
+            preferences.sleepDisabledByUs = false  // 복원 성공 → 마커 해제
         } catch {
-            // NOPASSWD 미설정이면 .passwordRequired — UI 측에 notification 발송
+            // NOPASSWD 미설정이면 .passwordRequired — pmset 은 stranded, 마커 유지(다음 실행 self-heal).
             onPmsetRestoreNeeded?()
         }
         acMonitor.stop()
@@ -145,6 +153,32 @@ public final class ClosedLidStore: ObservableObject {
         if shouldStopKeepAwake { onEndShouldStopKeepAwake?() }
     }
 
+    /// 앱 시작 시 1회 호출. 이전 세션이 크래시/강제종료/auto-trigger 복원실패로 `disablesleep 1` 을
+    /// 남긴 채 끝났으면(마커 true + state .off + 실제 SleepDisabled==1) 시스템 슬립을 복원한다.
+    /// terminate 훅만으로는 못 잡는 비정상 종료 경로의 self-heal.
+    public func reconcileStrandedSleepOnLaunch() async {
+        guard preferences.sleepDisabledByUs, !state.isOn, !isToggling else { return }
+        isToggling = true
+        defer { isToggling = false }
+
+        // 사용자가 이미 수동 복원(pmset disablesleep 0)했으면 prompt 없이 마커만 정리.
+        guard await power.isSystemSleepDisabled() else {
+            preferences.sleepDisabledByUs = false
+            logger.info("reconcile: marker stale but SleepDisabled already 0 — marker cleared")
+            return
+        }
+
+        logger.critical("reconcile: stranded SleepDisabled=1 from previous session — restoring")
+        do {
+            try await power.enableSystemSleep(allowPrompt: true)
+            preferences.sleepDisabledByUs = false
+        } catch {
+            // 복원 실패(취소/비번필요) — 마커 유지하고 사용자에게 알림.
+            logger.warning("reconcile: restore failed: \(error.localizedDescription)")
+            onPmsetRestoreNeeded?()
+        }
+    }
+
     public func forceOff(sessionProvider: any SessionProvider, trigger: Trigger = .manual) async {
         guard state.isOn, !isToggling else { return }
         isToggling = true
@@ -158,6 +192,7 @@ public final class ClosedLidStore: ObservableObject {
         let allowPrompt = (trigger == .manual)
         do {
             try await power.enableSystemSleep(allowPrompt: allowPrompt)
+            preferences.sleepDisabledByUs = false  // 복원 성공 → 마커 해제
         } catch PowerControl.Error.userCancelled {
             logger.warning("enableSystemSleep cancelled by user — aborting forceOff, monitors 재무장")
             // manual cancel 만 도달 (auto 는 prompt 없어 .userCancelled 안 남). "OFF 안 함" 의도 →

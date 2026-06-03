@@ -8,6 +8,7 @@ public final class ClosedLidPreferences: ObservableObject {
     public static let keyScreensaver = "closedLid.preventScreenSaver"
     public static let keyAlsoStopKeepAwakeOnEnd = "closedLid.alsoStopKeepAwakeOnEnd"
     public static let keyLastCustomMinutes = "closedLid.lastCustomMinutes"
+    public static let keySleepDisabledByUs = "closedLid.sleepDisabledByUs"
 
     /// `caffeinate -d` (display sleep 차단). lid open 상태에서 화면 안 끄고 싶을 때.
     @Published public var keepDisplayAwake: Bool {
@@ -30,6 +31,13 @@ public final class ClosedLidPreferences: ObservableObject {
         didSet { defaults.set(lastCustomMinutes, forKey: Self.keyLastCustomMinutes) }
     }
 
+    /// "우리가 `pmset disablesleep 1` 을 켜둔 채 아직 복원 못 했다" 는 영구 마커.
+    /// disableSystemSleep 성공 시 true, enableSystemSleep 성공 시 false. 크래시/강제종료/
+    /// auto-trigger 복원 실패로 `SleepDisabled=1` 이 stranded 됐는지를 다음 실행에서 판별하는 근거.
+    public var sleepDisabledByUs: Bool {
+        didSet { defaults.set(sleepDisabledByUs, forKey: Self.keySleepDisabledByUs) }
+    }
+
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
@@ -39,6 +47,7 @@ public final class ClosedLidPreferences: ObservableObject {
         self.alsoStopKeepAwakeOnEnd = defaults.bool(forKey: Self.keyAlsoStopKeepAwakeOnEnd)
         let savedMinutes = defaults.integer(forKey: Self.keyLastCustomMinutes)
         self.lastCustomMinutes = savedMinutes > 0 ? savedMinutes : 90
+        self.sleepDisabledByUs = defaults.bool(forKey: Self.keySleepDisabledByUs)
     }
 
     /// 현재 prefs 에 따른 caffeinate 명령. base flag 는 항상 `-is`.

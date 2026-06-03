@@ -35,6 +35,8 @@ final class FakePowerController: ClosedLidStore.PowerController, @unchecked Send
     var shouldThrowOnEnable: Error?
     /// allowPrompt=false 일 때만 던질 에러. nil 이면 shouldThrowOnEnable 사용.
     var shouldThrowOnEnableSilent: Error?
+    /// isSystemSleepDisabled() 반환값. reconcile 게이트 테스트용.
+    var systemSleepDisabled = false
 
     func disableSystemSleep() async throws {
         disableCalls += 1
@@ -46,6 +48,7 @@ final class FakePowerController: ClosedLidStore.PowerController, @unchecked Send
         if !allowPrompt, let e = shouldThrowOnEnableSilent { throw e }
         if let e = shouldThrowOnEnable { throw e }
     }
+    func isSystemSleepDisabled() async -> Bool { systemSleepDisabled }
 }
 
 final class FakePowerSourceMonitor: PowerSourceMonitor, @unchecked Sendable {
@@ -389,6 +392,120 @@ final class ClosedLidStoreTests: XCTestCase {
         // 재무장된 AC monitor 가 fire 하면 다시 forceOff 시도 (이번엔 power.shouldThrowOnEnable 그대로
         // userCancelled 라 또 cancel — 무한 루프 같지만 forceOff 가 내부 guard 로 멈춤)
         // → 검증은 monitor 재무장만으로 충분.
+    }
+
+    // MARK: - sleepDisabledByUs 마커 & launch reconcile (stranded disablesleep self-heal)
+
+    private func makeIsolatedPrefs() -> ClosedLidPreferences {
+        let d = UserDefaults(suiteName: "test.closedlid.\(UUID().uuidString)")!
+        return ClosedLidPreferences(defaults: d)
+    }
+
+    func test_turnOn_setsSleepDisabledMarker() async {
+        let power = FakePowerController()
+        let prefs = makeIsolatedPrefs()
+        let store = ClosedLidStore(power: power, preferences: prefs)
+
+        await store.turnOn(duration: nil, sessionProvider: FakeSessionProvider())
+
+        XCTAssertTrue(prefs.sleepDisabledByUs)
+    }
+
+    func test_turnOn_disableFails_doesNotSetMarker() async {
+        let power = FakePowerController()
+        power.shouldThrowOnDisable = PowerControl.Error.userCancelled
+        let prefs = makeIsolatedPrefs()
+        let store = ClosedLidStore(power: power, preferences: prefs)
+
+        await store.turnOn(duration: nil, sessionProvider: FakeSessionProvider())
+
+        XCTAssertFalse(prefs.sleepDisabledByUs)
+    }
+
+    func test_forceOff_success_clearsMarker() async {
+        let power = FakePowerController()
+        let prefs = makeIsolatedPrefs()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power, preferences: prefs)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+        XCTAssertTrue(prefs.sleepDisabledByUs)
+
+        await store.forceOff(sessionProvider: provider, trigger: .manual)
+
+        XCTAssertFalse(prefs.sleepDisabledByUs)
+    }
+
+    /// auto trigger 에서 NOPASSWD 미설정으로 복원 실패하면 마커는 true 로 유지돼야 함 — 다음 실행 self-heal 근거.
+    func test_forceOff_auto_passwordRequired_keepsMarker() async {
+        let power = FakePowerController()
+        power.shouldThrowOnEnableSilent = PowerControl.Error.passwordRequired
+        let prefs = makeIsolatedPrefs()
+        let provider = FakeSessionProvider()
+        let store = ClosedLidStore(power: power, preferences: prefs)
+        await store.turnOn(duration: nil, sessionProvider: provider)
+
+        await store.forceOff(sessionProvider: provider, trigger: .auto)
+
+        XCTAssertEqual(store.state, .off)
+        XCTAssertTrue(prefs.sleepDisabledByUs)  // pmset stranded → 마커 유지
+    }
+
+    /// 마커 true + 실제 SleepDisabled==1 → reconcile 이 prompt 허용 복원 호출 후 마커 해제.
+    func test_reconcile_strandedDisabled_restoresAndClearsMarker() async {
+        let power = FakePowerController()
+        power.systemSleepDisabled = true
+        let prefs = makeIsolatedPrefs()
+        prefs.sleepDisabledByUs = true
+        let store = ClosedLidStore(power: power, preferences: prefs)
+
+        await store.reconcileStrandedSleepOnLaunch()
+
+        XCTAssertEqual(power.enableCalls, 1)
+        XCTAssertEqual(power.lastAllowPrompt, true)  // launch → prompt 허용
+        XCTAssertFalse(prefs.sleepDisabledByUs)
+    }
+
+    /// 마커 false 면 reconcile 이 아무것도 안 함(불필요한 prompt 방지).
+    func test_reconcile_noMarker_noOp() async {
+        let power = FakePowerController()
+        power.systemSleepDisabled = true  // 시스템은 disabled 라도
+        let prefs = makeIsolatedPrefs()   // 마커가 false 면
+        let store = ClosedLidStore(power: power, preferences: prefs)
+
+        await store.reconcileStrandedSleepOnLaunch()
+
+        XCTAssertEqual(power.enableCalls, 0)
+    }
+
+    /// 마커 true 인데 사용자가 이미 수동 복원(SleepDisabled==0) → prompt 없이 마커만 정리.
+    func test_reconcile_markerStaleButAlreadyEnabled_clearsMarkerNoPrompt() async {
+        let power = FakePowerController()
+        power.systemSleepDisabled = false
+        let prefs = makeIsolatedPrefs()
+        prefs.sleepDisabledByUs = true
+        let store = ClosedLidStore(power: power, preferences: prefs)
+
+        await store.reconcileStrandedSleepOnLaunch()
+
+        XCTAssertEqual(power.enableCalls, 0)        // 불필요한 password prompt 없음
+        XCTAssertFalse(prefs.sleepDisabledByUs)     // 마커는 정리
+    }
+
+    /// reconcile 복원이 실패하면 마커 유지 + onPmsetRestoreNeeded 발화.
+    func test_reconcile_restoreFails_keepsMarkerAndFiresCallback() async {
+        let power = FakePowerController()
+        power.systemSleepDisabled = true
+        power.shouldThrowOnEnable = PowerControl.Error.userCancelled
+        let prefs = makeIsolatedPrefs()
+        prefs.sleepDisabledByUs = true
+        let store = ClosedLidStore(power: power, preferences: prefs)
+        var fired = false
+        store.onPmsetRestoreNeeded = { fired = true }
+
+        await store.reconcileStrandedSleepOnLaunch()
+
+        XCTAssertTrue(prefs.sleepDisabledByUs)
+        XCTAssertTrue(fired)
     }
 
     func test_forceOff_stopsBothMonitors() async {

@@ -24,6 +24,7 @@ public final class AppState: ObservableObject {
     public let localeService: LocaleService
     public private(set) var controlClient: ControlClient?
     private var bootstrapTask: Task<Void, Never>?
+    private var didReconcileLaunch = false
 
     @Published public var previewSession: TmuxSession?
 
@@ -71,6 +72,10 @@ public final class AppState: ObservableObject {
             guard self.awakeStore.isAwake(in: self.sessionStore) else { return }
             Task { await self.awakeStore.toggle(in: self.sessionStore, via: client) }
         }
+
+        // 비정상 종료(크래시/강제종료/auto 복원실패)로 stranded 된 disablesleep 을 launch 시점에 self-heal.
+        // bootstrap(menu open)에 의존하지 않도록 init 에서 바로 — 단, prompt 는 실제 stranded 일 때만.
+        Task { @MainActor [weak self] in await self?.reconcileClosedLidOnLaunch() }
     }
 
     public func bootstrap() async {
@@ -80,6 +85,11 @@ public final class AppState: ObservableObject {
             self.controlClient = client
             try await client.bootstrap()
             sessionStore.bind(to: client)
+            // 비정상 종료로 남은 closed-lid caffeinate 세션 정리 — state .off 인데 세션만 살아있는 경우.
+            // (pmset stranded 는 init 의 reconcile 이, 여기선 orphan tmux/caffeinate 세션을 처리.)
+            if !closedLidStore.state.isOn {
+                try? await client.kill(sessionName: ClosedLidStore.sessionName)
+            }
             registerHotkeys()
             notificationService.requestAuthorization()
             notificationService.startIdleCheck(store: sessionStore)
@@ -152,6 +162,14 @@ public final class AppState: ObservableObject {
     public func turnOffClosedLidAndWait() async {
         guard let client = controlClient else { return }
         await closedLidStore.forceOff(sessionProvider: client, trigger: .manual)
+    }
+
+    /// 앱 시작 시 1회 호출. 이전 세션이 비정상 종료로 `pmset disablesleep 1` 을 남겼으면 복원.
+    /// controlClient 불필요 — pmset 만 다루므로 bootstrap 전에도 안전하게 실행.
+    public func reconcileClosedLidOnLaunch() async {
+        guard !didReconcileLaunch else { return }
+        didReconcileLaunch = true
+        await closedLidStore.reconcileStrandedSleepOnLaunch()
     }
 
     public func startPreview(for session: TmuxSession) {

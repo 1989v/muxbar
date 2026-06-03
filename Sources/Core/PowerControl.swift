@@ -52,6 +52,33 @@ public enum PowerControl {
         }
     }
 
+    /// `pmset -g` 의 `SleepDisabled` 값을 읽어 현재 시스템 슬립이 꺼져있는지 반환.
+    /// 읽기 전용이라 sudo/비밀번호 불필요 — launch reconcile 에서 불필요한 password prompt 를
+    /// 피하기 위한 게이트로 사용.
+    static func isSystemSleepDisabled() -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        p.arguments = ["-g"]
+        let out = Pipe()
+        p.standardOutput = out
+        p.standardError = Pipe()
+        do {
+            try p.run()
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            p.waitUntilExit()
+            guard let text = String(data: data, encoding: .utf8) else { return false }
+            // 예: " SleepDisabled\t\t1"
+            for line in text.split(separator: "\n") {
+                let fields = line.split(whereSeparator: \.isWhitespace)
+                guard fields.first == "SleepDisabled", let value = fields.last else { continue }
+                return value == "1"
+            }
+            return false
+        } catch {
+            return false
+        }
+    }
+
     @MainActor
     private static func run(disable: Bool) throws {
         // NOTE: blocks main thread during password dialog (NSAppleScript runs nested run loop).
@@ -73,5 +100,8 @@ public struct DefaultPowerController: ClosedLidStore.PowerController {
     public func disableSystemSleep() async throws { try await PowerControl.disableSystemSleep() }
     public func enableSystemSleep(allowPrompt: Bool) async throws {
         try await PowerControl.enableSystemSleep(allowPrompt: allowPrompt)
+    }
+    public func isSystemSleepDisabled() async -> Bool {
+        PowerControl.isSystemSleepDisabled()
     }
 }
