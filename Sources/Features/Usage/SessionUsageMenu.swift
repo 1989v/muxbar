@@ -8,7 +8,9 @@ public struct SessionUsageMenu: View {
     @ObservedObject public var store: UsageStore
 
     /// 구역마다 보여 줄 세션 수. 나머지는 "외 N개" 한 줄로 묶는다.
-    static let rowLimit = 20
+    /// 메뉴가 화면 높이를 넘으면 macOS 가 스크롤 모드로 바꿔 위로 되돌아가기 어렵다 —
+    /// 두 구역을 합쳐도 한 화면에 들어오게 10줄로 둔다.
+    static let rowLimit = 10
 
     public init(store: UsageStore) {
         self.store = store
