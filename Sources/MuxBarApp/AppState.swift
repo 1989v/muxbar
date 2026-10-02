@@ -29,7 +29,6 @@ public final class AppState: ObservableObject {
     private var didReconcileLaunch = false
 
     @Published public var previewSession: TmuxSession?
-    @Published public var showingUsageSessions = false
 
     private let logger = MuxLogging.logger("MuxBarApp.AppState")
 

@@ -191,19 +191,24 @@ final class UsageTests: XCTestCase {
         XCTAssertEqual(sessions.count, 1)
         XCTAssertEqual(sessions.first?.sessionId, "p-1")
         XCTAssertEqual(sessions.first?.tokens, TokenCounts(input: 1300, output: 130))
-        XCTAssertEqual(sessions.shareOfProviderTotal()["codex:p-1"], 1.0)
+        XCTAssertEqual(sessions.shareOfTotal()["codex:p-1"], 1.0)
     }
 
-    func test_shareOfProviderTotal_usesEachProvidersOwnTotal() {
+    func test_shareOfTotal_sumsToOneOverWhateverListIsGiven() {
         let now = Date()
         func make(_ p: AIProvider, _ id: String, _ n: Int) -> SessionUsage {
             SessionUsage(provider: p, sessionId: id, title: nil, cwd: nil, tokens: TokenCounts(input: n), lastActivity: now)
         }
         let sessions = [make(.claude, "a", 300), make(.claude, "b", 100), make(.codex, "c", 50)]
-        let shares = sessions.shareOfProviderTotal()
-        XCTAssertEqual(shares["claude:a"], 0.75)
-        XCTAssertEqual(shares["claude:b"], 0.25)
-        XCTAssertEqual(shares["codex:c"], 1.0)
+        // 전체 탭: 세 AI 세션 합이 분모
+        let all = sessions.shareOfTotal()
+        XCTAssertEqual(all["claude:a"]!, 300.0 / 450, accuracy: 1e-9)
+        XCTAssertEqual(all["codex:c"]!, 50.0 / 450, accuracy: 1e-9)
+        XCTAssertEqual(all.values.reduce(0, +), 1.0, accuracy: 1e-9)
+        // Claude 탭: Claude 합이 분모
+        let claude = sessions.filter { $0.provider == .claude }.shareOfTotal()
+        XCTAssertEqual(claude["claude:a"], 0.75)
+        XCTAssertEqual(claude["claude:b"], 0.25)
     }
 
     // MARK: preferences / menu bar text

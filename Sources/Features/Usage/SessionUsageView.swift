@@ -31,7 +31,7 @@ public struct SessionUsageView: View {
             .labelsHidden()
 
             let rows = visible
-            let shares = store.sessions.shareOfProviderTotal()
+            let shares = rows.shareOfTotal()
             Text(L.usageTotal(UsageFormat.tokens(rows.reduce(0) { $0 + $1.tokens.total }), sessions: rows.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -70,7 +70,7 @@ public struct SessionUsageView: View {
 
 private struct SessionUsageRow: View {
     let session: SessionUsage
-    /// 같은 AI 의 이번 주 전체 토큰 중 이 세션의 비율
+    /// 지금 보이는 목록 전체 토큰 중 이 세션의 비율
     let share: Double
 
     var body: some View {
@@ -92,7 +92,7 @@ private struct SessionUsageRow: View {
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(UsageFormat.percent(share))
+                    Text(UsageFormat.share(share))
                         .font(.callout.monospacedDigit().bold())
                         .foregroundStyle(.secondary)
                     Text(UsageFormat.tokens(session.tokens.total))
@@ -102,7 +102,7 @@ private struct SessionUsageRow: View {
                     .progressViewStyle(.linear)
                     .frame(width: 90)
                     .tint(session.provider == .claude ? .orange : .blue)
-                    .help(L.usageShareHelp(session.provider.displayName))
+                    .help(L.usageShareHelp)
                 Text(L.usageDetail(output: UsageFormat.tokens(session.tokens.output),
                                    cache: UsageFormat.percent(session.tokens.cacheReadRatio)))
                     .font(.caption2.monospacedDigit())

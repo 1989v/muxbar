@@ -89,11 +89,8 @@ struct MuxBarApp: App {
             // 2c. AI 주간 한도 + 세션별 토큰 — 쓰는 AI 가 없으면 구분선까지 통째로 숨는다
             UsageMenuItem(
                 store: appState.usageStore,
-                onShowSessions: { appState.showingUsageSessions = true }
+                onShowSessions: { SessionUsageWindow.show(store: appState.usageStore) }
             )
-            .popover(isPresented: $appState.showingUsageSessions, arrowEdge: .leading) {
-                SessionUsageView(store: appState.usageStore)
-            }
 
             // 3. New Session (템플릿 서브메뉴)
             NewSessionMenu(

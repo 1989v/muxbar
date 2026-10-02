@@ -95,6 +95,12 @@ enum UsageFormat {
         return "\(Int((ratio * 100).rounded()))%"
     }
 
+    /// 점유율 — 소수 첫째 자리까지라 목록 합이 100% 에서 크게 벗어나 보이지 않는다
+    static func share(_ ratio: Double) -> String {
+        if ratio > 0, ratio < 0.001 { return "<0.1%" }
+        return String(format: "%.1f%%", ratio * 100)
+    }
+
     static func dateTime(_ date: Date) -> String {
         let f = DateFormatter()
         f.setLocalizedDateFormatFromTemplate("MMdd HH:mm")

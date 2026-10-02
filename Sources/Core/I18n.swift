@@ -87,9 +87,7 @@ public enum L {
     public static func usageTotal(_ total: String, sessions: Int) -> String {
         String(format: lookup("usage.total"), total, sessions)
     }
-    public static func usageShareHelp(_ provider: String) -> String {
-        String(format: lookup("usage.shareHelp"), provider)
-    }
+    public static var usageShareHelp: String { lookup("usage.shareHelp") }
     public static func tooltipUsage(_ list: String) -> String {
         String(format: lookup("tooltip.usage"), list)
     }
