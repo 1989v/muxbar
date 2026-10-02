@@ -22,6 +22,7 @@
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
 - **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
 - **Closed-lid mode (헤드리스 클램쉘)** — "외부 디스플레이 없이 동작하는 클램쉘" 토글. 덮개 닫고도 CPU 가 계속 돌아 빌드 / CI / 원격 세션이 가방 안 출퇴근을 견딤. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료 — 타이머 만료는 비밀번호 prompt 에 막히지 않음. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
+- **AI 주간 한도 · 세션별 토큰** — 메뉴바에 Claude · Codex 주간 남은 한도(`56|57`), 메뉴에서 이번 주 AI 세션별 토큰과 그 AI 안의 점유율. **쓰는 AI 에 맞춰 보인다** — 안 쓰면 예전처럼 아이콘만, 하나만 쓰면 그 숫자 하나. 로컬 로그만 읽어 토큰을 쓰지 않는다. [AI 주간 한도](#ai-주간-한도--세션별-토큰) 섹션 참고.
 - **다국어 지원** — English + 한국어. Settings → 언어 에서 전환 (자동 / English / 한국어).
 - **템플릿 / 스크립트 런처** — 빌트인 + 사용자 YAML 템플릿. 장시간 실행되는 스크립트(OCI 인스턴스 생성, 클라우드 용량 polling, 백업, 배치 잡)를 메뉴바 토글처럼 한 클릭으로 띄우고 detach/re-attach — 스크립트는 계속 돈다. [장시간 실행 스크립트 런처](#long-running-script-launcher) 섹션 참고.
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
@@ -68,6 +69,7 @@
 ## AI 주간 한도 · 세션별 토큰
 
 - 메뉴바 아이콘 옆에 Claude · Codex 의 **주간 남은 한도(%)** 를 `56|57` 처럼 띄운다. 어느 것을 어떤 순서로 띄울지(최대 2개)는 Settings 에서 고른다.
+- **쓰는 AI 만 보인다.** 최근 7일 안에 한도가 관측된 AI 만 "사용 중"으로 본다 — 하나도 없으면 메뉴바·메뉴 모두 예전 모습 그대로(숫자·AI 섹션 없음), 하나만 쓰면 그 숫자 하나만. Claude Code 는 쓰는데 아래 statusline 설정이 없으면 메뉴에 설정 안내만 뜬다.
 - 메뉴의 **이번 주 세션별 토큰** 은 이번 주간 창(리셋 시각 − 7일) 동안 쓴 토큰을 AI 세션 하나 단위로, 많이 쓴 순서대로 보여 준다. 하위 에이전트 사용량은 부모 세션에 합친다.
 - 읽는 곳 — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` 과 아래 statusline 이 남기는 `~/.claude/rate-limits.json`.
 - Claude 주간 한도는 Claude Code 의 statusline 입력에만 있어서, statusline 스크립트에 아래 한 줄을 넣어야 보인다. Claude Code 가 화면을 그릴 때만 갱신되므로 메뉴에 관측 시각을 함께 표시한다.

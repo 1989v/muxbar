@@ -81,9 +81,27 @@ final class UsageTests: XCTestCase {
         try write([codexTokenCount(at: "2026-10-02T08:25:20Z", input: 10, cached: 0, output: 1, used: 42)],
                   to: paths.codexSessions.appendingPathComponent("2026/10/02/rollout-a.jsonl"))
 
-        let limits = await UsageAggregator(paths: paths).weeklyLimits()
+        let limits = await UsageAggregator(paths: paths).weeklyLimits(now: Date(timeIntervalSince1970: 1_791_000_100))
         XCTAssertEqual(limits[.claude]?.usedPercent, 43)
         XCTAssertEqual(limits[.codex]?.usedPercent, 42)
+    }
+
+    func test_weeklyLimits_dropsClaudeSnapshotOlderThanAWeek() async throws {
+        try #"{"observed_at":1791000000,"rate_limits":{"seven_day":{"used_percentage":43,"resets_at":1791300000}}}"#
+            .write(to: paths.claudeRateLimits, atomically: true, encoding: .utf8)
+        let aggregator = UsageAggregator(paths: paths)
+        let eightDaysLater = Date(timeIntervalSince1970: 1_791_000_000 + 8 * 24 * 3600)
+        let limits = await aggregator.weeklyLimits(now: eightDaysLater)
+        XCTAssertNil(limits[.claude])
+    }
+
+    func test_hasRecentClaudeTranscripts() async throws {
+        let aggregator = UsageAggregator(paths: paths)
+        let none = await aggregator.hasRecentClaudeTranscripts()
+        XCTAssertFalse(none)
+        try write([#"{"type":"user"}"#], to: paths.claudeProjects.appendingPathComponent("-work/sid.jsonl"))
+        let some = await aggregator.hasRecentClaudeTranscripts()
+        XCTAssertTrue(some)
     }
 
     // MARK: sessions
@@ -184,14 +202,53 @@ final class UsageTests: XCTestCase {
     }
 
     @MainActor
-    func test_menuBarText_joinsRemainingInChosenOrder() async throws {
-        try #"{"observed_at":1791000000,"rate_limits":{"seven_day":{"used_percentage":44,"resets_at":4102444800}}}"#
-            .write(to: paths.claudeRateLimits, atomically: true, encoding: .utf8)
+    private func loadedStore() async throws -> UsageStore {
         let store = UsageStore(aggregator: UsageAggregator(paths: paths))
         store.refreshLimits()
         for _ in 0..<50 where store.limits.isEmpty { try await Task.sleep(nanoseconds: 20_000_000) }
-        XCTAssertEqual(store.menuBarText(for: [.claude, .codex]), "56|–")
-        XCTAssertEqual(store.menuBarText(for: [.codex, .claude]), "–|56")
-        XCTAssertNil(store.menuBarText(for: []))
+        return store
+    }
+
+    @MainActor
+    func test_menuBarText_bothUsed_joinsInChosenOrder() async throws {
+        try #"{"observed_at":\#(Int(Date().timeIntervalSince1970)),"rate_limits":{"seven_day":{"used_percentage":44,"resets_at":4102444800}}}"#
+            .write(to: paths.claudeRateLimits, atomically: true, encoding: .utf8)
+        try write([codexTokenCount(at: "2026-10-02T08:25:20Z", input: 10, cached: 0, output: 1, used: 36, resets: 4102444800)],
+                  to: paths.codexSessions.appendingPathComponent("2026/10/02/rollout-a.jsonl"))
+        let store = try await loadedStore()
+        XCTAssertEqual(store.menuBarText(for: [.claude, .codex]), "56|64")
+        XCTAssertEqual(store.menuBarText(for: [.codex, .claude]), "64|56")
+        XCTAssertEqual(store.activeProviders, [.claude, .codex])
+    }
+
+    @MainActor
+    func test_menuBarText_onlyOneUsed_showsOnlyThatOne() async throws {
+        try #"{"observed_at":\#(Int(Date().timeIntervalSince1970)),"rate_limits":{"seven_day":{"used_percentage":44,"resets_at":4102444800}}}"#
+            .write(to: paths.claudeRateLimits, atomically: true, encoding: .utf8)
+        let store = try await loadedStore()
+        XCTAssertEqual(store.menuBarText(for: [.claude, .codex]), "56")
+        XCTAssertEqual(store.menuBarText(for: [.codex, .claude]), "56")
+        XCTAssertNil(store.menuBarText(for: [.codex]))
+        XCTAssertEqual(store.activeProviders, [.claude])
+    }
+
+    @MainActor
+    func test_noAIUsed_hidesEverything() async throws {
+        let store = UsageStore(aggregator: UsageAggregator(paths: paths))
+        store.refreshLimits()
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertNil(store.menuBarText(for: [.claude, .codex]))
+        XCTAssertFalse(store.hasAnyAI)
+        XCTAssertEqual(store.activeProviders, [])
+    }
+
+    @MainActor
+    func test_claudeUsedWithoutStatuslineSnapshot_showsSetupHintOnly() async throws {
+        try write([#"{"type":"user"}"#], to: paths.claudeProjects.appendingPathComponent("-work/sid.jsonl"))
+        let store = UsageStore(aggregator: UsageAggregator(paths: paths))
+        store.refreshLimits()
+        for _ in 0..<50 where !store.claudeStatuslineMissing { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertTrue(store.hasAnyAI)
+        XCTAssertNil(store.menuBarText(for: [.claude, .codex]))
     }
 }

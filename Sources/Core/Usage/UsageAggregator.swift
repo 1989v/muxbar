@@ -60,16 +60,35 @@ public actor UsageAggregator {
 
     // MARK: weekly limits
 
-    public func weeklyLimits() -> [AIProvider: WeeklyLimit] {
+    /// 최근 7일 안에 관측된 한도만 돌려준다. 없는 AI 는 쓰지 않는 것으로 본다.
+    public func weeklyLimits(now: Date = Date()) -> [AIProvider: WeeklyLimit] {
         var result: [AIProvider: WeeklyLimit] = [:]
+        // statusline 파일은 Claude 를 그만 써도 남아 있으므로 관측 시각으로 거른다
         if let data = try? Data(contentsOf: paths.claudeRateLimits),
-           let limit = ClaudeRateLimitSnapshot.weeklyLimit(data) {
+           let limit = ClaudeRateLimitSnapshot.weeklyLimit(data),
+           limit.observedAt >= now.addingTimeInterval(-WeeklyLimit.window) {
             result[.claude] = limit
         }
         if let limit = latestCodexLimit() {
             result[.codex] = limit
         }
         return result
+    }
+
+    /// 최근 7일 안에 Claude Code 를 썼는가. 한도 파일이 없을 때 statusline 설정 안내를 띄울지 판단한다.
+    /// 하위 에이전트까지 뒤지지 않고 `<root>/<project>/*.jsonl` 만 본다.
+    public func hasRecentClaudeTranscripts(now: Date = Date()) -> Bool {
+        let fm = FileManager.default
+        let since = now.addingTimeInterval(-WeeklyLimit.window)
+        guard let projects = try? fm.contentsOfDirectory(at: paths.claudeProjects, includingPropertiesForKeys: nil) else { return false }
+        for project in projects {
+            guard let files = try? fm.contentsOfDirectory(at: project, includingPropertiesForKeys: [.contentModificationDateKey]) else { continue }
+            for file in files where file.pathExtension == "jsonl" {
+                if let mtime = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+                   mtime >= since { return true }
+            }
+        }
+        return false
     }
 
     /// 가장 최근에 쓰인 rollout 몇 개의 끝부분에서 마지막 주간 한도를 찾는다.

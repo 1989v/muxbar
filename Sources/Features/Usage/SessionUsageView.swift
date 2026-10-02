@@ -25,7 +25,7 @@ public struct SessionUsageView: View {
             }
             Picker("", selection: $filter) {
                 Text(L.usageFilterAll).tag(AIProvider?.none)
-                ForEach(AIProvider.allCases) { Text($0.displayName).tag(AIProvider?.some($0)) }
+                ForEach(providersInSessions) { Text($0.displayName).tag(AIProvider?.some($0)) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -56,6 +56,10 @@ public struct SessionUsageView: View {
         .padding(12)
         .frame(width: 440, height: 480)
         .onAppear { store.refreshSessions() }
+    }
+
+    private var providersInSessions: [AIProvider] {
+        AIProvider.allCases.filter { p in store.sessions.contains { $0.provider == p } }
     }
 
     private var visible: [SessionUsage] {

@@ -86,7 +86,7 @@ struct MuxBarApp: App {
 
             Divider()
 
-            // 2c. AI 주간 한도 + 세션별 토큰
+            // 2c. AI 주간 한도 + 세션별 토큰 — 쓰는 AI 가 없으면 구분선까지 통째로 숨는다
             UsageMenuItem(
                 store: appState.usageStore,
                 onShowSessions: { appState.showingUsageSessions = true }
@@ -94,8 +94,6 @@ struct MuxBarApp: App {
             .popover(isPresented: $appState.showingUsageSessions, arrowEdge: .leading) {
                 SessionUsageView(store: appState.usageStore)
             }
-
-            Divider()
 
             // 3. New Session (템플릿 서브메뉴)
             NewSessionMenu(
@@ -141,10 +139,10 @@ struct MuxBarApp: App {
             mode = L.tooltipIdle
         }
         // 메뉴바 숫자만으로는 어느 AI 인지 안 보여서 툴팁에 이름을 붙인다
-        let shown = appState.usagePreferences.menuBarProviders
+        let shown = appState.usagePreferences.menuBarProviders.filter { appState.usageStore.limits[$0] != nil }
         guard !shown.isEmpty else { return mode }
         let list = shown.map { provider in
-            let value = appState.usageStore.limits[provider].map { "\($0.remainingPercent())%" } ?? "–"
+            let value = appState.usageStore.limits[provider].map { "\($0.remainingPercent())%" } ?? ""
             return "\(provider.displayName) \(value)"
         }.joined(separator: " · ")
         return "\(mode)\n\(L.tooltipUsage(list))"

@@ -22,6 +22,7 @@
 - **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
 - **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
 - **Closed-lid mode (headless clamshell)** — A "clamshell-without-the-external-display" toggle: keep the CPU running with the lid shut so your build / CI / remote session survives a bag commute. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit — timer expiry never blocks on a password prompt. See [Closed-lid mode](#closed-lid-mode-detailed) below.
+- **AI weekly limits · tokens by session** — Claude · Codex weekly limit left in the menu bar (`56|57`), and this week's tokens per AI session with its share in the menu. **Adapts to what you use** — nothing shown if you use neither, a single number if you use one. Reads local logs only, so it spends no tokens. See [AI weekly limits](#ai-weekly-limits--tokens-by-session).
 - **Multilingual** — English + 한국어. Settings → Language to switch (Auto / English / 한국어).
 - **Templates / script launcher** — Built-in + user-defined session layouts (YAML). Use them as one-click toggles for long-running scripts (OCI instance creation, cloud capacity polling, backups, batch jobs) — launch from the menu bar, detach/re-attach anytime, the script keeps running. See [Long-running script launcher](#long-running-script-launcher) below.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
@@ -68,6 +69,7 @@
 ## AI weekly limits · tokens by session
 
 - Shows the **weekly limit left (%)** for Claude and Codex next to the menu bar icon, e.g. `56|57`. Pick which ones and in what order (up to 2) in Settings.
+- **Only the AIs you use show up.** An AI counts as in use when its limit was seen within the last 7 days — with none, the menu bar and menu look exactly as before (no number, no AI section); with one, just that number. If you use Claude Code without the statusline setup below, the menu shows only a setup hint.
 - **This week's tokens by session** in the menu lists tokens used in the current weekly window (reset time − 7 days) per AI session, largest first. Subagent usage is added to its parent session.
 - Sources — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` plus `~/.claude/rate-limits.json` written by the statusline below.
 - Claude's weekly limit is only available in Claude Code's statusline input, so add this to your statusline script. It updates only while Claude Code redraws, so the menu shows when it was last seen.

@@ -44,6 +44,18 @@ public final class UsageStore: ObservableObject {
     @Published public private(set) var sessions: [SessionUsage] = []
     @Published public private(set) var isScanningSessions = false
     @Published public private(set) var sessionsScannedAt: Date?
+    /// Claude Code 는 쓰는데 statusline 이 한도 파일을 안 남기는 상태 — 설정 안내용
+    @Published public private(set) var claudeStatuslineMissing = false
+
+    /// 최근 7일 안에 한도가 관측된 AI. 순서는 `AIProvider.allCases`.
+    public var activeProviders: [AIProvider] {
+        AIProvider.allCases.filter { limits[$0] != nil }
+    }
+
+    /// AI 기능을 보여 줄 것이 있는가. 없으면 메뉴의 AI 섹션을 숨겨 예전 모습 그대로 둔다.
+    public var hasAnyAI: Bool {
+        !limits.isEmpty || claudeStatuslineMissing
+    }
 
     private let aggregator: UsageAggregator
     private var timer: Timer?
@@ -68,7 +80,9 @@ public final class UsageStore: ObservableObject {
     public func refreshLimits() {
         Task {
             let limits = await aggregator.weeklyLimits()
+            let missing = limits[.claude] == nil ? await aggregator.hasRecentClaudeTranscripts() : false
             self.limits = limits
+            self.claudeStatuslineMissing = missing
         }
     }
 
@@ -93,11 +107,10 @@ public final class UsageStore: ObservableObject {
         }
     }
 
-    /// 메뉴바 표기 — 고른 순서대로 남은 %를 `|` 로 잇는다. 관측값이 없는 AI 는 `–`.
+    /// 메뉴바 표기 — 고른 AI 중 쓰고 있는 것만, 고른 순서대로 남은 %를 `|` 로 잇는다.
+    /// 쓰는 AI 가 하나면 숫자 하나, 없으면 nil(예전처럼 아이콘만).
     public func menuBarText(for providers: [AIProvider], now: Date = Date()) -> String? {
-        guard !providers.isEmpty else { return nil }
-        return providers
-            .map { limits[$0].map { String($0.remainingPercent(now: now)) } ?? "–" }
-            .joined(separator: "|")
+        let values = providers.compactMap { limits[$0].map { String($0.remainingPercent(now: now)) } }
+        return values.isEmpty ? nil : values.joined(separator: "|")
     }
 }

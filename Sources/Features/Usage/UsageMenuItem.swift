@@ -11,13 +11,21 @@ public struct UsageMenuItem: View {
         self.onShowSessions = onShowSessions
     }
 
+    /// AI 를 하나도 안 쓰면 아무것도 그리지 않는다(아래 구분선 포함).
     public var body: some View {
+        if store.hasAnyAI {
+            section
+            Divider()
+        }
+    }
+
+    private var section: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L.usageSection).font(.caption).foregroundStyle(.secondary)
-            ForEach(AIProvider.allCases) { provider in
+            ForEach(store.activeProviders) { provider in
                 row(provider)
             }
-            if store.limits[.claude] == nil {
+            if store.claudeStatuslineMissing {
                 Text(L.usageClaudeHint)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
