@@ -93,3 +93,4 @@
 "usage.refresh"          = "Refresh";
 "usage.more"             = "%d more";
 "usage.sectionHeader"    = "%@ · %@ · %d sessions";
+"usage.sectionHeaderWithLimit" = "%@ · %@ of weekly limit · %@ · %d sessions";

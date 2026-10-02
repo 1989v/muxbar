@@ -82,6 +82,12 @@ enum UsageFormat {
         return String(format: "%.1f%%", ratio * 100)
     }
 
+    /// 주간 한도 % (0...100 값)
+    static func limitShare(_ percent: Double) -> String {
+        if percent > 0, percent < 0.1 { return "<0.1%" }
+        return String(format: "%.1f%%", percent)
+    }
+
     static func dateTime(_ date: Date) -> String {
         let f = DateFormatter()
         f.setLocalizedDateFormatFromTemplate("MMdd HH:mm")

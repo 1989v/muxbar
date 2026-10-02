@@ -93,3 +93,4 @@
 "usage.refresh"          = "새로고침";
 "usage.more"             = "외 %d개";
 "usage.sectionHeader"    = "%@ · %@ · 세션 %d개";
+"usage.sectionHeaderWithLimit" = "%@ · 주간 한도 %@ 사용 · %@ · 세션 %d개";

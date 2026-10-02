@@ -211,6 +211,17 @@ final class UsageTests: XCTestCase {
         XCTAssertEqual(claude["claude:b"], 0.25)
     }
 
+    func test_shareOfLimit_splitsWeeklyUsedPercentByTokenShare() {
+        let now = Date()
+        func make(_ id: String, _ n: Int) -> SessionUsage {
+            SessionUsage(provider: .claude, sessionId: id, title: nil, cwd: nil, tokens: TokenCounts(input: n), lastActivity: now)
+        }
+        let shares = [make("a", 300), make("b", 100)].shareOfLimit(usedPercent: 16)
+        XCTAssertEqual(shares["claude:a"]!, 12, accuracy: 1e-9)
+        XCTAssertEqual(shares["claude:b"]!, 4, accuracy: 1e-9)
+        XCTAssertEqual(shares.values.reduce(0, +), 16, accuracy: 1e-9)
+    }
+
     // MARK: preferences / menu bar text
 
     @MainActor

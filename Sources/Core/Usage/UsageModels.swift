@@ -120,4 +120,10 @@ public extension Array where Element == SessionUsage {
         }
         return shares
     }
+
+    /// 각 세션이 주간 한도(100%)에서 쓴 몫(%). 이번 주 사용률을 토큰 비율로 나눈 근사치라
+    /// 목록 합이 `usedPercent` 가 된다. 한도가 토큰 종류별로 다르게 깎이는 것은 반영하지 못한다.
+    func shareOfLimit(usedPercent: Double) -> [String: Double] {
+        shareOfTotal().mapValues { $0 * usedPercent }
+    }
 }

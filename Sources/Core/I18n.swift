@@ -84,6 +84,9 @@ public enum L {
     public static func usageMore(_ n: Int) -> String {
         String(format: lookup("usage.more"), n)
     }
+    public static func usageSectionHeaderWithLimit(_ provider: String, used: String, total: String, sessions: Int) -> String {
+        String(format: lookup("usage.sectionHeaderWithLimit"), provider, used, total, sessions)
+    }
     public static func usageSectionHeader(_ provider: String, total: String, sessions: Int) -> String {
         String(format: lookup("usage.sectionHeader"), provider, total, sessions)
     }

@@ -47,16 +47,24 @@ public struct SessionUsageMenu: View {
 
     @ViewBuilder
     private func section(_ provider: AIProvider, _ rows: [SessionUsage]) -> some View {
-        let shares = rows.shareOfTotal()
         let total = rows.reduce(0) { $0 + $1.tokens.total }
-        Section(L.usageSectionHeader(provider.displayName, total: UsageFormat.tokens(total), sessions: rows.count)) {
+        let limit = store.limits[provider]
+        // 한도를 알면 주간 한도 100% 중 세션 몫(합 = 이번 주 사용률), 모르면 구역 안 토큰 비율
+        let values: [String: String] = limit.map { l in
+            rows.shareOfLimit(usedPercent: l.usedPercent).mapValues(UsageFormat.limitShare)
+        } ?? rows.shareOfTotal().mapValues(UsageFormat.share)
+        let header = limit.map {
+            L.usageSectionHeaderWithLimit(provider.displayName, used: UsageFormat.limitShare($0.usedPercent),
+                                          total: UsageFormat.tokens(total), sessions: rows.count)
+        } ?? L.usageSectionHeader(provider.displayName, total: UsageFormat.tokens(total), sessions: rows.count)
+        Section(header) {
             ForEach(rows.prefix(Self.rowLimit)) { session in
                 // 누르면 세션 id 복사 — `claude --resume <id>` 등에 붙여 넣는 용도
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(session.sessionId, forType: .string)
                 } label: {
-                    Text(rowText(session, share: shares[session.id] ?? 0))
+                    Text(rowText(session, value: values[session.id] ?? "–"))
                 }
             }
             if rows.count > Self.rowLimit {
@@ -65,10 +73,10 @@ public struct SessionUsageMenu: View {
         }
     }
 
-    private func rowText(_ session: SessionUsage, share: Double) -> String {
+    private func rowText(_ session: SessionUsage, value: String) -> String {
         let place = session.cwd.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "–"
         let title = session.title ?? L.usageUntitled
         let clipped = title.count > 40 ? String(title.prefix(40)) + "…" : title
-        return "\(UsageFormat.share(share))   \(UsageFormat.tokens(session.tokens.total))   \(clipped) · \(place)"
+        return "\(value)   \(UsageFormat.tokens(session.tokens.total))   \(clipped) · \(place)"
     }
 }
