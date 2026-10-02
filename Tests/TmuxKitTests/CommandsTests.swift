@@ -5,7 +5,7 @@ final class CommandsTests: XCTestCase {
     func test_listSessions_cliString() {
         XCTAssertEqual(
             TmuxCommand.listSessions.cliString,
-            #"list-sessions -F "#{session_name}@@@#{session_attached}@@@#{session_windows}@@@#{session_created}@@@#{session_activity}@@@#{session_path}""#
+            ##"list-sessions -F "#{session_name}@@@#{session_attached}@@@#{session_windows}@@@#{session_created}@@@#{session_activity}@@@#{session_path}""##
         )
     }
 
