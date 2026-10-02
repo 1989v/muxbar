@@ -74,10 +74,19 @@
 - 읽는 곳 — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` 과 아래 statusline 이 남기는 `~/.claude/rate-limits.json`.
 - Claude 주간 한도는 Claude Code 의 statusline 입력에만 있어서, statusline 스크립트에 아래 한 줄을 넣어야 보인다. Claude Code 가 화면을 그릴 때만 갱신되므로 메뉴에 관측 시각을 함께 표시한다.
 
+오래 쉬고 있던 세션도 마지막 응답의 **옛 값**으로 statusline 을 다시 그린다. 그대로 쓰면 여러 세션이 번갈아 덮어써 숫자가 오락가락하므로, 같은 주간 창에서 사용률이 줄어드는 값은 버린다(창 안 사용률은 줄지 않는다).
+
 ```bash
 # statusline 스크립트 안, 입력 JSON 을 $input 에 읽어 둔 뒤
-printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
-  > ~/.claude/rate-limits.json.tmp && mv ~/.claude/rate-limits.json.tmp ~/.claude/rate-limits.json
+rl="$HOME/.claude/rate-limits.json"
+if printf '%s' "$input" | jq -e --slurpfile old <(cat "$rl" 2>/dev/null || echo null) '
+    (.rate_limits.seven_day // {}) as $n | ($old[0].rate_limits.seven_day // {}) as $o
+    | ($o.resets_at == null) or (($n.resets_at // 0) > $o.resets_at)
+      or (($n.resets_at // 0) == $o.resets_at and ($n.used_percentage // 0) >= ($o.used_percentage // 0))
+  ' >/dev/null 2>&1; then
+  printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
+    > "$rl.tmp" && mv "$rl.tmp" "$rl"
+fi
 ```
 
 <a id="closed-lid-mode-detailed"></a>

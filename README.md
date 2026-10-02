@@ -74,10 +74,19 @@
 - Sources — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` plus `~/.claude/rate-limits.json` written by the statusline below.
 - Claude's weekly limit is only available in Claude Code's statusline input, so add this to your statusline script. It updates only while Claude Code redraws, so the menu shows when it was last seen.
 
+Idle sessions also redraw the statusline with the **stale** value from their last response. Written as-is, several sessions overwrite each other and the number flips, so drop any value whose usage goes down within the same weekly window (usage never decreases inside a window).
+
 ```bash
 # inside the statusline script, after reading the input JSON into $input
-printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
-  > ~/.claude/rate-limits.json.tmp && mv ~/.claude/rate-limits.json.tmp ~/.claude/rate-limits.json
+rl="$HOME/.claude/rate-limits.json"
+if printf '%s' "$input" | jq -e --slurpfile old <(cat "$rl" 2>/dev/null || echo null) '
+    (.rate_limits.seven_day // {}) as $n | ($old[0].rate_limits.seven_day // {}) as $o
+    | ($o.resets_at == null) or (($n.resets_at // 0) > $o.resets_at)
+      or (($n.resets_at // 0) == $o.resets_at and ($n.used_percentage // 0) >= ($o.used_percentage // 0))
+  ' >/dev/null 2>&1; then
+  printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
+    > "$rl.tmp" && mv "$rl.tmp" "$rl"
+fi
 ```
 
 <a id="closed-lid-mode-detailed"></a>
