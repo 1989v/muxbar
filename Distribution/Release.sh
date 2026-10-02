@@ -79,6 +79,11 @@ create-dmg \
     "$OUT_DIR/muxbar-$VERSION.dmg" \
     "$OUT_DIR/$APP_NAME"
 
+# .dmg 안에 들어갔으니 중간 .app 은 지운다 — 남겨 두면 Spotlight·Launchpad 에 앱이 하나 더 보인다
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+    -u "$OUT_DIR/$APP_NAME" >/dev/null 2>&1 || true
+rm -rf "$OUT_DIR/$APP_NAME"
+
 echo "[5/5] SHA256"
 shasum -a 256 "$OUT_DIR/muxbar-$VERSION.dmg"
 

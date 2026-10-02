@@ -31,6 +31,7 @@ public struct SessionUsageView: View {
             .labelsHidden()
 
             let rows = visible
+            let shares = store.sessions.shareOfProviderTotal()
             Text(L.usageTotal(UsageFormat.tokens(rows.reduce(0) { $0 + $1.tokens.total }), sessions: rows.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -45,7 +46,7 @@ public struct SessionUsageView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(rows) { session in
-                            SessionUsageRow(session: session)
+                            SessionUsageRow(session: session, share: shares[session.id] ?? 0)
                             Divider()
                         }
                     }
@@ -65,6 +66,8 @@ public struct SessionUsageView: View {
 
 private struct SessionUsageRow: View {
     let session: SessionUsage
+    /// 같은 AI 의 이번 주 전체 토큰 중 이 세션의 비율
+    let share: Double
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -84,8 +87,18 @@ private struct SessionUsageRow: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(UsageFormat.tokens(session.tokens.total))
-                    .font(.callout.monospacedDigit().bold())
+                HStack(spacing: 6) {
+                    Text(UsageFormat.percent(share))
+                        .font(.callout.monospacedDigit().bold())
+                        .foregroundStyle(.secondary)
+                    Text(UsageFormat.tokens(session.tokens.total))
+                        .font(.callout.monospacedDigit().bold())
+                }
+                ProgressView(value: share)
+                    .progressViewStyle(.linear)
+                    .frame(width: 90)
+                    .tint(session.provider == .claude ? .orange : .blue)
+                    .help(L.usageShareHelp(session.provider.displayName))
                 Text(L.usageDetail(output: UsageFormat.tokens(session.tokens.output),
                                    cache: UsageFormat.percent(session.tokens.cacheReadRatio)))
                     .font(.caption2.monospacedDigit())

@@ -93,3 +93,4 @@
 "usage.total"            = "total %@ · %d sessions";
 "settings.usageSection"  = "Menu bar weekly limits (max 2)";
 "tooltip.usage"          = "Weekly limit left — %@";
+"usage.shareHelp"        = "Share of all %@ tokens this week";

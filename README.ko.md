@@ -199,8 +199,7 @@ YAML 스키마 상세는 [사용자 템플릿](#사용자-템플릿) 섹션 참�
 ```bash
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
-./build.sh install
-open /Applications/muxbar.app
+./build.sh open
 ```
 
 이걸로 끝. 메뉴바에 커피잔 아이콘이 뜨고, 클릭하면 tmux 세션 리스트가 보입니다.
@@ -215,9 +214,8 @@ Xcode 없이 Command Line Tools 만으로 됩니다.
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
 
-./build.sh           # Release 빌드 + .app 번들 (./muxbar.app 생성)
-./build.sh open      # 빌드 + 레포 디렉터리에서 바로 실행
-./build.sh install   # 빌드 + /Applications 로 복사
+./build.sh           # Release 빌드 + /Applications/muxbar.app 교체 (실행 중이면 재시작)
+./build.sh open      # 위에 추가로, 꺼져 있어도 실행
 ```
 
 `build.sh` 가 하는 일:
@@ -225,6 +223,7 @@ cd muxbar
 2. 바이너리를 `muxbar.app/Contents/{MacOS, Info.plist}` 구조로 래핑
 3. `codesign --sign -` 로 ad-hoc 서명 (Apple Developer 계정 불필요)
 4. quarantine 속성 제거 → Gatekeeper 경고 없이 첫 실행 가능
+5. `.build/` 에서 조립한 번들을 `/Applications/muxbar.app` 으로 옮긴다 — 레포에 사본을 남기지 않아 앱이 하나만 보인다
 
 ### 2. Homebrew cask *(배포 후 제공 예정)*
 

@@ -83,6 +83,7 @@ enum UsageFormat {
 
     static func percent(_ ratio: Double?) -> String {
         guard let ratio else { return "–" }
+        if ratio > 0, ratio < 0.01 { return "<1%" }
         return "\(Int((ratio * 100).rounded()))%"
     }
 

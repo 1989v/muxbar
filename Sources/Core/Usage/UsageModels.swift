@@ -108,3 +108,18 @@ public struct SessionUsage: Identifiable, Equatable, Sendable {
         self.lastActivity = lastActivity
     }
 }
+
+public extension Array where Element == SessionUsage {
+    /// 세션별로, 같은 AI 의 이번 주 전체 토큰 중 그 세션이 차지한 비율(0...1). 키는 `SessionUsage.id`.
+    /// 화면 필터와 무관하게 같은 AI 전체를 분모로 쓴다.
+    func shareOfProviderTotal() -> [String: Double] {
+        var totals: [AIProvider: Int] = [:]
+        for s in self { totals[s.provider, default: 0] += s.tokens.total }
+        var shares: [String: Double] = [:]
+        for s in self {
+            let total = totals[s.provider] ?? 0
+            shares[s.id] = total > 0 ? Double(s.tokens.total) / Double(total) : 0
+        }
+        return shares
+    }
+}

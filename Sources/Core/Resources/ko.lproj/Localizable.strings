@@ -93,3 +93,4 @@
 "usage.total"            = "합계 %@ · 세션 %d개";
 "settings.usageSection"  = "메뉴바 주간 한도 (최대 2개)";
 "tooltip.usage"          = "주간 남은 한도 — %@";
+"usage.shareHelp"        = "이번 주 %@ 전체 토큰 중 이 세션의 비율";

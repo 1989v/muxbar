@@ -155,6 +155,18 @@ final class UsageTests: XCTestCase {
         XCTAssertEqual(s.tokens, TokenCounts(input: 300, output: 100, cacheRead: 1700, cacheWrite: 0))
     }
 
+    func test_shareOfProviderTotal_usesEachProvidersOwnTotal() {
+        let now = Date()
+        func make(_ p: AIProvider, _ id: String, _ n: Int) -> SessionUsage {
+            SessionUsage(provider: p, sessionId: id, title: nil, cwd: nil, tokens: TokenCounts(input: n), lastActivity: now)
+        }
+        let sessions = [make(.claude, "a", 300), make(.claude, "b", 100), make(.codex, "c", 50)]
+        let shares = sessions.shareOfProviderTotal()
+        XCTAssertEqual(shares["claude:a"], 0.75)
+        XCTAssertEqual(shares["claude:b"], 0.25)
+        XCTAssertEqual(shares["codex:c"], 1.0)
+    }
+
     // MARK: preferences / menu bar text
 
     @MainActor

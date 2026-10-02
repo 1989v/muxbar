@@ -199,8 +199,7 @@ Copy-paste, in one shot:
 ```bash
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
-./build.sh install
-open /Applications/muxbar.app
+./build.sh open
 ```
 
 That's it. The coffee-cup icon appears in your menu bar. Click it, and you'll see your tmux sessions.
@@ -215,9 +214,8 @@ Works with just Command Line Tools — Xcode not required.
 git clone https://github.com/1989v/muxbar.git
 cd muxbar
 
-./build.sh           # Release build + .app bundle (creates ./muxbar.app)
-./build.sh open      # Build + launch from the repo directory
-./build.sh install   # Build + copy to /Applications
+./build.sh           # Release build + replace /Applications/muxbar.app (relaunches if running)
+./build.sh open      # Same, and launch even if it wasn't running
 ```
 
 What `build.sh` actually does:
@@ -225,6 +223,7 @@ What `build.sh` actually does:
 2. Wraps the binary into `muxbar.app/Contents/{MacOS,Info.plist}`
 3. Ad-hoc signs it with `codesign --sign -` (no Apple Developer account needed)
 4. Strips the quarantine attribute so the app can launch without Gatekeeper prompts
+5. Moves the bundle assembled under `.build/` to `/Applications/muxbar.app` — no copy is left in the repo, so only one app shows up
 
 ### 2. Homebrew cask *(not yet published)*
 
