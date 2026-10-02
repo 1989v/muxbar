@@ -173,6 +173,27 @@ final class UsageTests: XCTestCase {
         XCTAssertEqual(s.tokens, TokenCounts(input: 300, output: 100, cacheRead: 1700, cacheWrite: 0))
     }
 
+    func test_codex_subagentRolloutsMergeIntoParent_oneRowPerSession() async throws {
+        let parent = paths.codexSessions.appendingPathComponent("2026/10/01/rollout-parent.jsonl")
+        try write([
+            #"{"timestamp":"2026-10-01T00:00:00Z","type":"session_meta","payload":{"id":"p-1","cwd":"/work/p"}}"#,
+            codexTokenCount(at: "2026-10-01T01:00:00Z", input: 1000, cached: 0, output: 100),
+        ], to: parent)
+        // 하위 에이전트: 자기 meta 다음에 부모 meta 가 이어진다. 누적은 자기 몫부터 시작
+        try write([
+            #"{"timestamp":"2026-10-01T00:10:00Z","type":"session_meta","payload":{"id":"c-1","cwd":"/work/p"}}"#,
+            #"{"timestamp":"2026-10-01T00:10:00Z","type":"session_meta","payload":{"id":"p-1","cwd":"/work/p"}}"#,
+            codexTokenCount(at: "2026-10-01T00:20:00Z", input: 300, cached: 0, output: 30),
+        ], to: paths.codexSessions.appendingPathComponent("2026/10/01/rollout-child.jsonl"))
+
+        let since = ISOTimestampParser().parse("2026-09-25T00:00:00Z")!
+        let sessions = await UsageAggregator(paths: paths).sessions(since: [.codex: since])
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions.first?.sessionId, "p-1")
+        XCTAssertEqual(sessions.first?.tokens, TokenCounts(input: 1300, output: 130))
+        XCTAssertEqual(sessions.shareOfProviderTotal()["codex:p-1"], 1.0)
+    }
+
     func test_shareOfProviderTotal_usesEachProvidersOwnTotal() {
         let now = Date()
         func make(_ p: AIProvider, _ id: String, _ n: Int) -> SessionUsage {

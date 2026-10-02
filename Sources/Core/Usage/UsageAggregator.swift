@@ -43,6 +43,8 @@ public actor UsageAggregator {
     private struct CodexFile {
         var offset: UInt64 = 0
         var size: UInt64 = 0
+        /// 집계 단위 세션 id. 하위 에이전트 rollout 은 자기 meta 다음에 부모 meta 가 이어 나오므로
+        /// 마지막 meta 의 id 가 곧 부모(최상위) 세션이다. 토큰 누적은 파일마다 자기 몫이다.
         var sessionId: String
         var cwd: String?
         /// (시각, 누적 토큰) — 시각 순
@@ -189,14 +191,23 @@ public actor UsageAggregator {
             codexFiles[file.url.path] = state
         }
 
-        let names = codexThreadNames()
-        return codexFiles.values.compactMap { state in
-            guard let last = state.points.last, last.0 >= start else { return nil }
+        // 하위 에이전트 파일은 부모 세션으로 합친다(Claude 와 같은 규칙)
+        struct Acc { var tokens = TokenCounts.zero; var last = Date.distantPast; var cwd: String? }
+        var bySession: [String: Acc] = [:]
+        for state in codexFiles.values {
+            guard let last = state.points.last, last.0 >= start else { continue }
             let baseline = state.points.last(where: { $0.0 < start })?.1 ?? .zero
-            let tokens = last.1 - baseline
-            guard tokens.total > 0 else { return nil }
-            return SessionUsage(provider: .codex, sessionId: state.sessionId, title: names[state.sessionId],
-                                cwd: state.cwd, tokens: tokens, lastActivity: last.0)
+            var acc = bySession[state.sessionId] ?? Acc()
+            acc.tokens = acc.tokens + (last.1 - baseline)
+            acc.last = max(acc.last, last.0)
+            if acc.cwd == nil { acc.cwd = state.cwd }
+            bySession[state.sessionId] = acc
+        }
+        let names = codexThreadNames()
+        return bySession.compactMap { id, acc in
+            guard acc.tokens.total > 0 else { return nil }
+            return SessionUsage(provider: .codex, sessionId: id, title: names[id],
+                                cwd: acc.cwd, tokens: acc.tokens, lastActivity: acc.last)
         }
     }
 
