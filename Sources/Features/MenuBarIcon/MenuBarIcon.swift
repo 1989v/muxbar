@@ -6,18 +6,37 @@ public struct MenuBarIcon: View {
     @ObservedObject public var sessionStore: SessionStore
     @ObservedObject public var awakeStore: AwakeStore
     @ObservedObject public var closedLidStore: ClosedLidStore
+    @ObservedObject public var usageStore: UsageStore
+    @ObservedObject public var usagePreferences: UsagePreferences
 
     public init(
         sessionStore: SessionStore,
         awakeStore: AwakeStore,
-        closedLidStore: ClosedLidStore
+        closedLidStore: ClosedLidStore,
+        usageStore: UsageStore,
+        usagePreferences: UsagePreferences
     ) {
         self.sessionStore = sessionStore
         self.awakeStore = awakeStore
         self.closedLidStore = closedLidStore
+        self.usageStore = usageStore
+        self.usagePreferences = usagePreferences
     }
 
     public var body: some View {
+        HStack(spacing: 4) {
+            modeIcon
+            // 주간 남은 한도 — 고른 AI 순서대로 "56|57"
+            if let text = usageStore.menuBarText(for: usagePreferences.menuBarProviders) {
+                Text(text)
+                    .font(.system(size: 11, weight: .medium))
+                    .monospacedDigit()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var modeIcon: some View {
         if closedLidStore.state.isOn {
             // closed-lid ON: 빨간 lock 우선 (Keep Awake ON 여부와 무관)
             // SwiftUI .foregroundColor(.red) 는 NSStatusItem 컨텍스트에서 system tint 로 override 됨.

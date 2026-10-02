@@ -22,11 +22,14 @@ public final class AppState: ObservableObject {
     public let notificationService: NotificationService
     public let loginItemService: LoginItemService
     public let localeService: LocaleService
+    public let usageStore: UsageStore
+    public let usagePreferences: UsagePreferences
     public private(set) var controlClient: ControlClient?
     private var bootstrapTask: Task<Void, Never>?
     private var didReconcileLaunch = false
 
     @Published public var previewSession: TmuxSession?
+    @Published public var showingUsageSessions = false
 
     private let logger = MuxLogging.logger("MuxBarApp.AppState")
 
@@ -59,6 +62,8 @@ public final class AppState: ObservableObject {
         }
         self.loginItemService = LoginItemService()
         self.localeService = LocaleService()
+        self.usageStore = UsageStore()
+        self.usagePreferences = UsagePreferences()
 
         if let tmuxPath = TmuxPath.resolve() {
             self.terminalAdapter = TerminalAdapter(tmuxPath: tmuxPath)
@@ -76,6 +81,9 @@ public final class AppState: ObservableObject {
         // 비정상 종료(크래시/강제종료/auto 복원실패)로 stranded 된 disablesleep 을 launch 시점에 self-heal.
         // bootstrap(menu open)에 의존하지 않도록 init 에서 바로 — 단, prompt 는 실제 stranded 일 때만.
         Task { @MainActor [weak self] in await self?.reconcileClosedLidOnLaunch() }
+
+        // 메뉴바 숫자는 메뉴를 열기 전부터 보여야 하므로 bootstrap 이 아니라 init 에서 시작.
+        usageStore.start()
     }
 
     public func bootstrap() async {

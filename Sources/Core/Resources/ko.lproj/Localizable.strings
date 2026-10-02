@@ -76,3 +76,20 @@
 
 // app
 "app.name"                = "muxbar";
+
+// usage
+"usage.section"          = "AI 주간 한도";
+"usage.noData"           = "기록 없음";
+"usage.claudeHint"       = "Claude 값은 statusline 이 ~/.claude/rate-limits.json 을 써야 보입니다";
+"usage.showSessions"     = "이번 주 세션별 토큰";
+"usage.scanning"         = "집계 중…";
+"usage.empty"            = "이번 주 사용 기록이 없습니다";
+"usage.filterAll"        = "전체";
+"usage.untitled"         = "(제목 없음)";
+"usage.remaining"        = "남은 %d%%";
+"usage.resets"           = "리셋 %@";
+"usage.observed"         = "%@ 관측";
+"usage.detail"           = "출력 %@ · 캐시 읽기 %@";
+"usage.total"            = "합계 %@ · 세션 %d개";
+"settings.usageSection"  = "메뉴바 주간 한도 (최대 2개)";
+"tooltip.usage"          = "주간 남은 한도 — %@";

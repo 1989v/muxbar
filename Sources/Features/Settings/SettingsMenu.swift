@@ -5,6 +5,7 @@ public struct SettingsMenu: View {
     @ObservedObject public var loginItemService: LoginItemService
     @ObservedObject public var closedLidPreferences: ClosedLidPreferences
     @ObservedObject public var localeService: LocaleService
+    @ObservedObject public var usagePreferences: UsagePreferences
 
     @State private var showingRelaunchAlert = false
     @State private var pendingPreference: LanguagePreference?
@@ -12,11 +13,13 @@ public struct SettingsMenu: View {
     public init(
         loginItemService: LoginItemService,
         closedLidPreferences: ClosedLidPreferences,
-        localeService: LocaleService
+        localeService: LocaleService,
+        usagePreferences: UsagePreferences
     ) {
         self.loginItemService = loginItemService
         self.closedLidPreferences = closedLidPreferences
         self.localeService = localeService
+        self.usagePreferences = usagePreferences
     }
 
     public var body: some View {
@@ -45,6 +48,19 @@ public struct SettingsMenu: View {
                 Text(L.settingsPreventScreenSaver)
             }
             .help(L.settingsPreventScreenSaverHelp)
+
+            Divider()
+            Text(L.settingsUsageSection).font(.caption).foregroundStyle(.secondary)
+            ForEach(AIProvider.allCases) { provider in
+                Toggle(isOn: Binding(
+                    get: { usagePreferences.isShown(provider) },
+                    set: { usagePreferences.set(provider, shown: $0) }
+                )) {
+                    Text(provider.displayName)
+                }
+                .disabled(!usagePreferences.isShown(provider)
+                          && usagePreferences.menuBarProviders.count >= UsagePreferences.maxShown)
+            }
 
             Divider()
             Picker(selection: Binding(

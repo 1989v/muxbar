@@ -65,6 +65,19 @@
 - `⋯` on a row opens the action menu (Attach / Preview / Kill)
 - Tapping the session name itself opens the live preview popover
 
+## AI weekly limits · tokens by session
+
+- Shows the **weekly limit left (%)** for Claude and Codex next to the menu bar icon, e.g. `56|57`. Pick which ones and in what order (up to 2) in Settings.
+- **This week's tokens by session** in the menu lists tokens used in the current weekly window (reset time − 7 days) per AI session, largest first. Subagent usage is added to its parent session.
+- Sources — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` plus `~/.claude/rate-limits.json` written by the statusline below.
+- Claude's weekly limit is only available in Claude Code's statusline input, so add this to your statusline script. It updates only while Claude Code redraws, so the menu shows when it was last seen.
+
+```bash
+# inside the statusline script, after reading the input JSON into $input
+printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
+  > ~/.claude/rate-limits.json.tmp && mv ~/.claude/rate-limits.json.tmp ~/.claude/rate-limits.json
+```
+
 <a id="closed-lid-mode-detailed"></a>
 ## Closed-lid mode
 

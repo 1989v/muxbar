@@ -76,3 +76,20 @@
 
 // app
 "app.name"                = "muxbar";
+
+// usage
+"usage.section"          = "AI weekly limits";
+"usage.noData"           = "no data";
+"usage.claudeHint"       = "Claude needs the statusline to write ~/.claude/rate-limits.json";
+"usage.showSessions"     = "This week's tokens by session";
+"usage.scanning"         = "Scanning…";
+"usage.empty"            = "No usage this week";
+"usage.filterAll"        = "All";
+"usage.untitled"         = "(untitled)";
+"usage.remaining"        = "%d%% left";
+"usage.resets"           = "resets %@";
+"usage.observed"         = "seen %@";
+"usage.detail"           = "out %@ · cache read %@";
+"usage.total"            = "total %@ · %d sessions";
+"settings.usageSection"  = "Menu bar weekly limits (max 2)";
+"tooltip.usage"          = "Weekly limit left — %@";

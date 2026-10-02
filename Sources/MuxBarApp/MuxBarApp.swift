@@ -31,7 +31,9 @@ struct MuxBarApp: App {
             MenuBarIcon(
                 sessionStore: appState.sessionStore,
                 awakeStore: appState.awakeStore,
-                closedLidStore: appState.closedLidStore
+                closedLidStore: appState.closedLidStore,
+                usageStore: appState.usageStore,
+                usagePreferences: appState.usagePreferences
             )
             .help(menuBarTooltip)
         }
@@ -84,6 +86,17 @@ struct MuxBarApp: App {
 
             Divider()
 
+            // 2c. AI 주간 한도 + 세션별 토큰
+            UsageMenuItem(
+                store: appState.usageStore,
+                onShowSessions: { appState.showingUsageSessions = true }
+            )
+            .popover(isPresented: $appState.showingUsageSessions, arrowEdge: .leading) {
+                SessionUsageView(store: appState.usageStore)
+            }
+
+            Divider()
+
             // 3. New Session (템플릿 서브메뉴)
             NewSessionMenu(
                 store: appState.templateStore,
@@ -100,7 +113,8 @@ struct MuxBarApp: App {
             SettingsMenu(
                 loginItemService: appState.loginItemService,
                 closedLidPreferences: appState.closedLidPreferences,
-                localeService: appState.localeService
+                localeService: appState.localeService,
+                usagePreferences: appState.usagePreferences
             )
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
@@ -118,13 +132,22 @@ struct MuxBarApp: App {
 
     /// 메뉴바 아이콘 hover tooltip — 현재 활성 모드 안내.
     private var menuBarTooltip: String {
+        let mode: String
         if appState.closedLidStore.state.isOn {
-            return L.tooltipClosedLid
+            mode = L.tooltipClosedLid
+        } else if appState.awakeStore.isAwake(in: appState.sessionStore) {
+            mode = L.tooltipKeepAwake
+        } else {
+            mode = L.tooltipIdle
         }
-        if appState.awakeStore.isAwake(in: appState.sessionStore) {
-            return L.tooltipKeepAwake
-        }
-        return L.tooltipIdle
+        // 메뉴바 숫자만으로는 어느 AI 인지 안 보여서 툴팁에 이름을 붙인다
+        let shown = appState.usagePreferences.menuBarProviders
+        guard !shown.isEmpty else { return mode }
+        let list = shown.map { provider in
+            let value = appState.usageStore.limits[provider].map { "\($0.remainingPercent())%" } ?? "–"
+            return "\(provider.displayName) \(value)"
+        }.joined(separator: " · ")
+        return "\(mode)\n\(L.tooltipUsage(list))"
     }
 
     private var header: some View {

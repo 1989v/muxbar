@@ -62,6 +62,35 @@ public enum L {
     public static var settingsRelaunchConfirm: String          { lookup("settings.relaunch.confirm") }
     public static var settingsRelaunchCancel: String           { lookup("settings.relaunch.cancel") }
 
+    // MARK: usage
+    public static var usageSection: String        { lookup("usage.section") }
+    public static var usageNoData: String         { lookup("usage.noData") }
+    public static var usageClaudeHint: String     { lookup("usage.claudeHint") }
+    public static var usageShowSessions: String   { lookup("usage.showSessions") }
+    public static var usageScanning: String       { lookup("usage.scanning") }
+    public static var usageEmpty: String          { lookup("usage.empty") }
+    public static var usageFilterAll: String      { lookup("usage.filterAll") }
+    public static var usageUntitled: String       { lookup("usage.untitled") }
+    public static var settingsUsageSection: String { lookup("settings.usageSection") }
+    public static func usageRemaining(_ pct: Int) -> String {
+        String(format: lookup("usage.remaining"), pct)
+    }
+    public static func usageResets(_ time: String) -> String {
+        String(format: lookup("usage.resets"), time)
+    }
+    public static func usageObserved(_ time: String) -> String {
+        String(format: lookup("usage.observed"), time)
+    }
+    public static func usageDetail(output: String, cache: String) -> String {
+        String(format: lookup("usage.detail"), output, cache)
+    }
+    public static func usageTotal(_ total: String, sessions: Int) -> String {
+        String(format: lookup("usage.total"), total, sessions)
+    }
+    public static func tooltipUsage(_ list: String) -> String {
+        String(format: lookup("tooltip.usage"), list)
+    }
+
     // MARK: status (connection placeholders)
     public static var statusConnecting: String      { lookup("status.connecting") }
     public static var statusConnectedEmpty: String  { lookup("status.connected.empty") }

@@ -65,6 +65,19 @@
 - 행 우측 `⋯` 를 누르면 액션 메뉴 (Attach / Preview / Kill)
 - 세션 이름 자체를 누르면 라이브 프리뷰 팝오버가 열림
 
+## AI 주간 한도 · 세션별 토큰
+
+- 메뉴바 아이콘 옆에 Claude · Codex 의 **주간 남은 한도(%)** 를 `56|57` 처럼 띄운다. 어느 것을 어떤 순서로 띄울지(최대 2개)는 Settings 에서 고른다.
+- 메뉴의 **이번 주 세션별 토큰** 은 이번 주간 창(리셋 시각 − 7일) 동안 쓴 토큰을 AI 세션 하나 단위로, 많이 쓴 순서대로 보여 준다. 하위 에이전트 사용량은 부모 세션에 합친다.
+- 읽는 곳 — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` 과 아래 statusline 이 남기는 `~/.claude/rate-limits.json`.
+- Claude 주간 한도는 Claude Code 의 statusline 입력에만 있어서, statusline 스크립트에 아래 한 줄을 넣어야 보인다. Claude Code 가 화면을 그릴 때만 갱신되므로 메뉴에 관측 시각을 함께 표시한다.
+
+```bash
+# statusline 스크립트 안, 입력 JSON 을 $input 에 읽어 둔 뒤
+printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
+  > ~/.claude/rate-limits.json.tmp && mv ~/.claude/rate-limits.json.tmp ~/.claude/rate-limits.json
+```
+
 <a id="closed-lid-mode-detailed"></a>
 ## Closed-lid mode
 
