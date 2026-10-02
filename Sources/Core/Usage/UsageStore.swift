@@ -72,6 +72,8 @@ public final class UsageStore: ObservableObject {
     public func start() {
         guard timer == nil else { return }
         refreshLimits()
+        // 첫 집계는 수 초 걸리므로 메뉴를 처음 열기 전에 미리 돌려 둔다
+        refreshSessions()
         timer = Timer.scheduledTimer(withTimeInterval: Self.limitInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshLimits() }
         }

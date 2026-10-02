@@ -23,6 +23,8 @@ struct MuxBarApp: App {
             menuContent
                 .onAppear {
                     appDelegate.appState = appState
+                    // 메뉴를 열 때마다 세션 집계 갱신 — 첫 집계 뒤엔 늘어난 로그만 읽어 금방 끝난다
+                    appState.usageStore.refreshSessions()
                     Task { @MainActor in
                         await appState.ensureBootstrapped()
                     }
@@ -87,10 +89,7 @@ struct MuxBarApp: App {
             Divider()
 
             // 2c. AI 주간 한도 + 세션별 토큰 — 쓰는 AI 가 없으면 구분선까지 통째로 숨는다
-            UsageMenuItem(
-                store: appState.usageStore,
-                onShowSessions: { SessionUsageWindow.show(store: appState.usageStore) }
-            )
+            UsageMenuItem(store: appState.usageStore)
 
             // 3. New Session (템플릿 서브메뉴)
             NewSessionMenu(

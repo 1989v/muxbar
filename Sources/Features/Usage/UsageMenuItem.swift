@@ -4,11 +4,9 @@ import Core
 /// 메뉴 안의 AI 주간 한도 행 + 세션별 토큰 열기 버튼.
 public struct UsageMenuItem: View {
     @ObservedObject public var store: UsageStore
-    public let onShowSessions: () -> Void
 
-    public init(store: UsageStore, onShowSessions: @escaping () -> Void) {
+    public init(store: UsageStore) {
         self.store = store
-        self.onShowSessions = onShowSessions
     }
 
     /// AI 를 하나도 안 쓰면 아무것도 그리지 않는다(아래 구분선 포함).
@@ -31,19 +29,8 @@ public struct UsageMenuItem: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Button(action: onShowSessions) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chart.bar.doc.horizontal")
-                    Text(L.usageShowSessions)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 2)
+            SessionUsageMenu(store: store)
+                .padding(.top, 2)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -87,12 +74,6 @@ enum UsageFormat {
         case 1_000...: return String(format: "%.1fK", value / 1_000)
         default: return "\(n)"
         }
-    }
-
-    static func percent(_ ratio: Double?) -> String {
-        guard let ratio else { return "–" }
-        if ratio > 0, ratio < 0.01 { return "<1%" }
-        return "\(Int((ratio * 100).rounded()))%"
     }
 
     /// 점유율 — 소수 첫째 자리까지라 목록 합이 100% 에서 크게 벗어나 보이지 않는다

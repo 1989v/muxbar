@@ -69,7 +69,6 @@ public enum L {
     public static var usageShowSessions: String   { lookup("usage.showSessions") }
     public static var usageScanning: String       { lookup("usage.scanning") }
     public static var usageEmpty: String          { lookup("usage.empty") }
-    public static var usageFilterAll: String      { lookup("usage.filterAll") }
     public static var usageUntitled: String       { lookup("usage.untitled") }
     public static var settingsUsageSection: String { lookup("settings.usageSection") }
     public static func usageRemaining(_ pct: Int) -> String {
@@ -81,13 +80,13 @@ public enum L {
     public static func usageObserved(_ time: String) -> String {
         String(format: lookup("usage.observed"), time)
     }
-    public static func usageDetail(output: String, cache: String) -> String {
-        String(format: lookup("usage.detail"), output, cache)
+    public static var usageRefresh: String { lookup("usage.refresh") }
+    public static func usageMore(_ n: Int) -> String {
+        String(format: lookup("usage.more"), n)
     }
-    public static func usageTotal(_ total: String, sessions: Int) -> String {
-        String(format: lookup("usage.total"), total, sessions)
+    public static func usageSectionHeader(_ provider: String, total: String, sessions: Int) -> String {
+        String(format: lookup("usage.sectionHeader"), provider, total, sessions)
     }
-    public static var usageShareHelp: String { lookup("usage.shareHelp") }
     public static func tooltipUsage(_ list: String) -> String {
         String(format: lookup("tooltip.usage"), list)
     }
