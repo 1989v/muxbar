@@ -79,13 +79,16 @@
 ```bash
 # statusline 스크립트 안, 입력 JSON 을 $input 에 읽어 둔 뒤
 rl="$HOME/.claude/rate-limits.json"
-if printf '%s' "$input" | jq -e --slurpfile old <(cat "$rl" 2>/dev/null || echo null) '
-    (.rate_limits.seven_day // {}) as $n | ($old[0].rate_limits.seven_day // {}) as $o
+old=$(jq -c . "$rl" 2>/dev/null | head -n1)   # 깨진 파일은 없는 것으로
+if printf '%s' "$input" | jq -e --argjson old "${old:-null}" '
+    (.rate_limits.seven_day // {}) as $n | ($old.rate_limits.seven_day // {}) as $o
     | ($o.resets_at == null) or (($n.resets_at // 0) > $o.resets_at)
       or (($n.resets_at // 0) == $o.resets_at and ($n.used_percentage // 0) >= ($o.used_percentage // 0))
   ' >/dev/null 2>&1; then
-  printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' \
-    > "$rl.tmp" && mv "$rl.tmp" "$rl"
+  # 임시 파일은 프로세스마다 따로 — 여러 세션이 같은 .tmp 에 쓰면 JSON 이 깨진다
+  tmp=$(mktemp "$rl.XXXXXX") \
+    && printf '%s' "$input" | jq -c --argjson now "$(date +%s)" '{observed_at: $now, rate_limits}' > "$tmp" \
+    && mv -f "$tmp" "$rl" || rm -f "$tmp"
 fi
 ```
 
