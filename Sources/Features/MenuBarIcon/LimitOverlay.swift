@@ -4,8 +4,10 @@ import AppKit
 ///
 /// 숫자를 아이콘 옆에 이어 붙이면 메뉴바 폭이 두 배 가까이 늘어서 아이콘에 겹친다.
 /// 메뉴바 라벨은 SwiftUI 겹치기·색 지정을 그대로 그려 주지 않으므로 이미지 한 장으로 합성한다.
-/// 글자·원 둘레를 비워 아이콘 선과 엉키지 않게 하고 모두 아이콘과 같은 색으로 칠한다 —
-/// 템플릿 이미지일 때는 시스템이 함께 다시 칠한다. 원 안 숫자는 오려 내 메뉴바 바탕이 비친다.
+/// 글자·원 둘레를 비워 아이콘 선과 엉키지 않게 한다. 원 안 숫자는 오려 내 메뉴바 바탕이 비친다.
+/// 템플릿 이미지면 시스템이 전부 메뉴바 글자색으로 다시 칠한다. 색 있는 아이콘(주황 잔·빨간 자물쇠)
+/// 위의 한도 숫자는 같은 색이면 안 읽혀서 메뉴바 글자색(어두운 바=흰색, 밝은 바=검정)으로 칠하고
+/// 잔은 조금 흐리게 둔다.
 enum LimitOverlay {
     static func image(base: NSImage, limitText: String?, sessionCount: Int,
                       color: NSColor, isTemplate: Bool) -> NSImage {
@@ -16,7 +18,7 @@ enum LimitOverlay {
         let scale = limitText == nil ? 1 : 18 / max(base.size.height, 1)
         let baseSize = NSSize(width: base.size.width * scale, height: base.size.height * scale)
 
-        let limitFont = NSFont.monospacedDigitSystemFont(ofSize: 7.5, weight: .bold)
+        let limitFont = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .black)
         let limitSize = limitText.map { ($0 as NSString).size(withAttributes: [.font: limitFont]) } ?? .zero
 
         let badgeText = sessionCount > 99 ? "99+" : "\(sessionCount)"
@@ -34,18 +36,20 @@ enum LimitOverlay {
         let image = NSImage(size: size, flipped: false) { _ in
             guard let cg = NSGraphicsContext.current?.cgContext else { return false }
             base.draw(in: NSRect(x: (iconWidth - baseSize.width) / 2, y: 0,
-                                 width: baseSize.width, height: baseSize.height))
+                                 width: baseSize.width, height: baseSize.height),
+                      from: .zero, operation: .sourceOver, fraction: limitText == nil ? 1 : 0.7)
 
             if let limitText {
-                // 잔 몸통 높이(아래쪽). 글자 둘레를 얇게 비운 뒤 칠한다
-                let origin = NSPoint(x: (iconWidth - limitSize.width) / 2, y: 1.5)
+                // 잔 몸통 높이(아래쪽). 글자 둘레를 비운 뒤 칠한다
+                let origin = NSPoint(x: (iconWidth - limitSize.width) / 2, y: 0)
                 cg.setBlendMode(.destinationOut)
                 (limitText as NSString).draw(at: origin, withAttributes: [
                     .font: limitFont, .foregroundColor: NSColor.black,
-                    .strokeColor: NSColor.black, .strokeWidth: -(1.6 / limitFont.pointSize * 100),
+                    .strokeColor: NSColor.black, .strokeWidth: -(1.8 / limitFont.pointSize * 100),
                 ])
                 cg.setBlendMode(.normal)
-                (limitText as NSString).draw(at: origin, withAttributes: [.font: limitFont, .foregroundColor: color])
+                let digitColor = isTemplate ? color : barTextColor
+                (limitText as NSString).draw(at: origin, withAttributes: [.font: limitFont, .foregroundColor: digitColor])
             }
 
             if badge.width > 0 {
@@ -68,5 +72,10 @@ enum LimitOverlay {
         }
         image.isTemplate = isTemplate
         return image
+    }
+
+    /// 그리는 시점의 외형(메뉴바 버튼이 그릴 때는 메뉴바 외형)으로 고른 글자색
+    private static var barTextColor: NSColor {
+        NSAppearance.currentDrawing().bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .white : .black
     }
 }
