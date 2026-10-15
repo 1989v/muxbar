@@ -26,10 +26,11 @@ public struct MenuBarIcon: View {
     public var body: some View {
         // 아이콘 몸통 위에 주간 남은 한도("56|57"), 오른쪽 위 원 안에 세션 수.
         // closed-lid 자물쇠에는 세션 수를 달지 않는다.
-        if let base = modeImage {
+        let limitText = usageStore.menuBarText(for: usagePreferences.menuBarProviders)
+        if let base = modeImage(withLimit: limitText != nil) {
             Image(nsImage: LimitOverlay.image(
                 base: base,
-                limitText: usageStore.menuBarText(for: usagePreferences.menuBarProviders),
+                limitText: limitText,
                 sessionCount: closedLidStore.state.isOn ? 0 : sessionCount,
                 color: modeColor,
                 isTemplate: base.isTemplate
@@ -44,8 +45,8 @@ public struct MenuBarIcon: View {
     /// closed-lid ON 이면 빨간 lock 우선 (Keep Awake ON 여부와 무관), 아니면 커피잔.
     /// SwiftUI .foregroundColor(.red) 는 NSStatusItem 컨텍스트에서 system tint 로 override 됨.
     /// awake 오렌지와 동일하게 NSImage + paletteColors + isTemplate=false 경로 사용.
-    private var modeImage: NSImage? {
-        closedLidStore.state.isOn ? paletteSymbol("lock.fill", color: .systemRed) : coloredSymbol()
+    private func modeImage(withLimit: Bool) -> NSImage? {
+        closedLidStore.state.isOn ? paletteSymbol("lock.fill", color: .systemRed) : coloredSymbol(withLimit: withLimit)
     }
 
     /// 한도 판의 색 — 아이콘과 같게. 템플릿(비활성 커피잔)이면 시스템이 다시 칠한다.
@@ -56,8 +57,9 @@ public struct MenuBarIcon: View {
 
     /// macOS 메뉴바는 기본적으로 template image (모노크롬) 로 렌더함.
     /// caffeinate 활성 시 오렌지 색상을 강제하려면 NSImage + isTemplate=false 조합 필요.
-    private func coloredSymbol() -> NSImage? {
-        let symbolName = isAwake ? "cup.and.heat.waves.fill" : "cup.and.saucer"
+    /// 한도 숫자를 받침에 걸칠 때는 김 없는 잔 — 김 나는 잔은 몸통이 작아 숫자에 묻힌다.
+    private func coloredSymbol(withLimit: Bool) -> NSImage? {
+        let symbolName = isAwake ? (withLimit ? "cup.and.saucer.fill" : "cup.and.heat.waves.fill") : "cup.and.saucer"
         guard var image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "muxbar") else {
             return nil
         }

@@ -6,16 +6,17 @@ import AppKit
 /// 메뉴바 라벨은 SwiftUI 겹치기·색 지정을 그대로 그려 주지 않으므로 이미지 한 장으로 합성한다.
 /// 글자·원 둘레를 비워 아이콘 선과 엉키지 않게 한다. 원 안 숫자는 오려 내 메뉴바 바탕이 비친다.
 /// 템플릿 이미지면 시스템이 전부 메뉴바 글자색으로 다시 칠한다. 색 있는 아이콘(주황 잔·빨간 자물쇠)
-/// 위의 한도 숫자는 같은 색이면 안 읽혀서 메뉴바 글자색(어두운 바=흰색, 밝은 바=검정)으로 칠하고
-/// 잔은 조금 흐리게 둔다.
+/// 위의 한도 숫자는 같은 색이면 안 읽혀서 메뉴바 글자색(어두운 바=흰색, 밝은 바=검정)으로 칠한다.
+/// 숫자는 아이콘 아래쪽(잔 받침)에만 걸치게 아이콘을 위로 올려 아이콘 모양이 남게 한다.
 enum LimitOverlay {
     static func image(base: NSImage, limitText: String?, sessionCount: Int,
                       color: NSColor, isTemplate: Bool) -> NSImage {
         guard limitText != nil || sessionCount > 0 else { return base }
 
-        // 잔량을 겹칠 때만 숫자가 잔 폭 안에 대부분 들어가도록 아이콘을 메뉴바 높이(약 18pt) 안에서 키운다.
+        // 잔량을 겹칠 때만 아이콘을 20pt 로 키우고 3.5pt 올린다 — 옆 메뉴바 아이콘과 비슷한 크기.
         // 세션 수 원만 달 때는 원래 크기 — 세션이 0 ↔ 1 개를 오갈 때 잔 크기가 바뀌지 않게.
-        let scale = limitText == nil ? 1 : 18 / max(base.size.height, 1)
+        let scale = limitText == nil ? 1 : 20 / max(base.size.height, 1)
+        let lift: CGFloat = limitText == nil ? 0 : 3.5
         let baseSize = NSSize(width: base.size.width * scale, height: base.size.height * scale)
 
         let limitFont = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .black)
@@ -31,17 +32,16 @@ enum LimitOverlay {
         // 원은 아이콘 오른쪽 위 모서리에 반쯤 걸치게 둔다
         let iconWidth = max(baseSize.width, ceil(limitSize.width) + 1)
         let size = NSSize(width: iconWidth + (badge.width > 0 ? badge.width / 2 : 0),
-                          height: max(baseSize.height, badge.height + baseSize.height / 2))
+                          height: max(baseSize.height + lift, badge.height + baseSize.height / 2))
 
         let image = NSImage(size: size, flipped: false) { _ in
             guard let cg = NSGraphicsContext.current?.cgContext else { return false }
-            base.draw(in: NSRect(x: (iconWidth - baseSize.width) / 2, y: 0,
-                                 width: baseSize.width, height: baseSize.height),
-                      from: .zero, operation: .sourceOver, fraction: limitText == nil ? 1 : 0.7)
+            base.draw(in: NSRect(x: (iconWidth - baseSize.width) / 2, y: lift,
+                                 width: baseSize.width, height: baseSize.height))
 
             if let limitText {
-                // 잔 몸통 높이(아래쪽). 글자 둘레를 비운 뒤 칠한다
-                let origin = NSPoint(x: (iconWidth - limitSize.width) / 2, y: 0)
+                // 잔 받침 높이(아래쪽). 글자 둘레를 비운 뒤 칠한다
+                let origin = NSPoint(x: (iconWidth - limitSize.width) / 2, y: -1)
                 cg.setBlendMode(.destinationOut)
                 (limitText as NSString).draw(at: origin, withAttributes: [
                     .font: limitFont, .foregroundColor: NSColor.black,
