@@ -11,7 +11,7 @@
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
 <p align="center">
-  <img src="docs/assets/screenshots/menu.png" alt="muxbar menu bar dropdown" width="420">
+  <img src="docs/assets/screenshots/menu.png" alt="muxbar menu bar dropdown" width="344">
 </p>
 
 ## Features
@@ -20,9 +20,9 @@
 - **Attach** — Open the selected session in Terminal.app / iTerm2 / Warp / Alacritty / kitty
 - **Kill** — Drop a session from the menu
 - **Live Preview** — Click a session row or pick "Preview" to see recent output (ANSI-rendered via SwiftTerm)
-- **Keep Awake** — Toggle `caffeinate -dims` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click.
+- **Keep Awake** — Toggle `caffeinate -dimsu` as a tracked tmux session (`_muxbar-awake`). Detects external caffeinate too (any tmux session running it, or any system-level process), and stops all of them with one click. Closed-lid mode's caffeinate is never counted or stopped. It prevents display sleep, the screen saver and idle sleep only — **closing the lid still sleeps the Mac**; use Closed-lid mode for that.
 - **Closed-lid mode (headless clamshell)** — A "clamshell-without-the-external-display" toggle: keep the CPU running with the lid shut so your build / CI / remote session survives a bag commute. Toggle → 30m/1h/4h/8h/∞ → admin password (Touch ID). Auto-disables on timer / AC unplug / lid open / quit — timer expiry never blocks on a password prompt. See [Closed-lid mode](#closed-lid-mode-detailed) below.
-- **AI weekly limits · tokens by session** — Claude · Codex weekly limit left in the menu bar (`56|57`), and this week's tokens per AI session with its share in the menu. **Adapts to what you use** — nothing shown if you use neither, a single number if you use one. Reads local logs only, so it spends no tokens. See [AI weekly limits](#ai-weekly-limits--tokens-by-session).
+- **AI weekly limits · tokens by session** — Claude · Codex weekly limit left in the menu bar (`56|57`), and this week's tokens per AI session with its share of the weekly limit in the menu. **Adapts to what you use** — nothing shown if you use neither, a single number if you use one. Reads local logs only, so it spends no tokens. See [AI weekly limits](#ai-weekly-limits--tokens-by-session).
 - **Multilingual** — English + 한국어. Settings → Language to switch (Auto / English / 한국어).
 - **Templates / script launcher** — Built-in + user-defined session layouts (YAML). Use them as one-click toggles for long-running scripts (OCI instance creation, cloud capacity polling, backups, batch jobs) — launch from the menu bar, detach/re-attach anytime, the script keeps running. See [Long-running script launcher](#long-running-script-launcher) below.
 - **Global hotkeys** — `⌘⇧A` toggles Keep Awake, `⌘⇧1`~`⌘⇧9` attach the top N sessions.
@@ -53,6 +53,11 @@
   ├──────────────────────────────┤
   │ 🔒  Closed-lid mode     OFF  │   ← prevent sleep on lid close
   ├──────────────────────────────┤
+  │ AI weekly limits              │   ← hidden entirely if you use no AI
+  │ Claude              56% left │
+  │ Codex               57% left │
+  │ ▤  This week's tokens…   ▸   │   ← per-session tokens submenu
+  ├──────────────────────────────┤
   │ ⊞  New Session          ▸    │   ← templates submenu
   ├──────────────────────────────┤
   │ ⚙  Settings             ▸    │   ← Open at Login, future prefs
@@ -68,9 +73,26 @@
 
 ## AI weekly limits · tokens by session
 
+<p align="center">
+  <img src="docs/assets/screenshots/menubar.png" alt="weekly limit left in the menu bar, 56|57" width="234"><br>
+  <sub>Menu bar — cup · session count · weekly limit left for Claude and Codex</sub>
+</p>
+
 - Shows the **weekly limit left (%)** for Claude and Codex next to the menu bar icon, e.g. `56|57`. Pick which ones and in what order (up to 2) in Settings.
 - **Only the AIs you use show up.** An AI counts as in use when its limit was seen within the last 7 days — with none, the menu bar and menu look exactly as before (no number, no AI section); with one, just that number. If you use Claude Code without the statusline setup below, the menu shows only a setup hint.
-- **This week's tokens by session** in the menu lists tokens used in the current weekly window (reset time − 7 days) per AI session, largest first. Subagent usage is added to its parent session.
+- The **AI weekly limits** block in the menu shows % left, reset time and when it was last seen for each AI. It turns orange at 40% left or less, red at 15% or less.
+- **This week's tokens by session** is a submenu that opens sideways like Settings and New Session. It lists tokens used in the current weekly window (reset time − 7 days) per AI session, largest first. Subagent usage is added to its parent session.
+  - One block per AI, titled with that AI's weekly usage, total tokens and session count.
+  - Each row's % is **that session's share of the 100% weekly limit**, so a block's rows add up to its weekly usage. It splits by token ratio, so it is an approximation that ignores per-token-type weighting. AIs without a known limit show their share of the block's tokens instead.
+  - Up to 10 rows per block, the rest folded into "N more". Clicking a row copies the session id — ready for `claude --resume <id>`.
+
+  ```text
+  Claude · 44.0% of weekly limit · 36.9M · 4 sessions
+    25.5%   21.4M   Retry queue for failed payments · shop-api
+    11.7%    9.8M   Checkout page skeleton loading · web
+  Codex · 43.0% of weekly limit · 53.7M · 3 sessions
+    30.4%   38.0M   Refactor inventory reservation · shop-api
+  ```
 - Sources — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` plus `~/.claude/rate-limits.json` written by the statusline below.
 - Claude's weekly limit is only available in Claude Code's statusline input, so add this to your statusline script. It updates only while Claude Code redraws, so the menu shows when it was last seen.
 
@@ -239,17 +261,18 @@ What `build.sh` actually does:
 4. Strips the quarantine attribute so the app can launch without Gatekeeper prompts
 5. Moves the bundle assembled under `.build/` to `/Applications/muxbar.app` — no copy is left in the repo, so only one app shows up
 
-### 2. Homebrew cask *(not yet published)*
-
-Once the first release is out:
+### 2. Homebrew cask
 
 ```bash
 brew install --cask 1989v/tap/muxbar
+brew upgrade --cask muxbar     # move to a new version — replaces the app in /Applications
 ```
 
-### 3. Pre-built `.dmg` *(not yet published)*
+Don't mix this with source builds (`./build.sh`). `build.sh` removes the cask record if present, because `brew upgrade` would otherwise overwrite your local build with the release.
 
-A signed-by-hand `.dmg` will be attached to each [GitHub Release](https://github.com/1989v/muxbar/releases). On first launch, right-click → Open to pass Gatekeeper (the app uses ad-hoc signing, not notarized).
+### 3. Pre-built `.dmg`
+
+Each [GitHub Release](https://github.com/1989v/muxbar/releases) has an ad-hoc signed `.dmg`. Dragging it into `/Applications` replaces the old version. On first launch, right-click → Open to pass Gatekeeper (not notarized).
 
 ## Development
 

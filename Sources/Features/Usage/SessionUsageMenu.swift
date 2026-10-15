@@ -3,7 +3,7 @@ import AppKit
 import Core
 
 /// 이번 주 세션별 토큰 — Settings·New Session 과 같은 펼침 메뉴.
-/// AI 별 구역으로 나누고 비율은 구역 안 합계 기준(구역마다 합 100%).
+/// AI 별 구역으로 나누고 한도를 알면 주간 한도 중 세션 몫, 모르면 구역 안 토큰 비율.
 public struct SessionUsageMenu: View {
     @ObservedObject public var store: UsageStore
 

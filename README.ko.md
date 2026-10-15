@@ -11,7 +11,7 @@
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
 <p align="center">
-  <img src="docs/assets/screenshots/menu.png" alt="muxbar 메뉴바 드롭다운" width="420">
+  <img src="docs/assets/screenshots/menu.ko.png" alt="muxbar 메뉴바 드롭다운" width="344">
 </p>
 
 ## 주요 기능
@@ -20,9 +20,9 @@
 - **Attach** — Terminal.app / iTerm2 / Warp / Alacritty / kitty 중 원하는 터미널에서 열기
 - **Kill** — 메뉴에서 바로 세션 종료
 - **라이브 프리뷰** — 세션 행 클릭 or "Preview" 로 최근 출력 미리보기 (SwiftTerm 으로 ANSI 렌더)
-- **Keep Awake** — `caffeinate -dims` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료.
+- **Keep Awake** — `caffeinate -dimsu` 를 `_muxbar-awake` 라는 tmux 세션으로 실행/토글. 외부에서 실행 중인 caffeinate (다른 tmux 세션이든 일반 프로세스든) 까지 감지하고 한 번에 종료한다. Closed-lid mode 의 caffeinate 는 세지도 끄지도 않는다. 화면 꺼짐·화면보호기·유휴 잠자기를 막을 뿐이고 **덮개를 닫으면 잠든다** — 닫고도 돌리려면 Closed-lid mode.
 - **Closed-lid mode (헤드리스 클램쉘)** — "외부 디스플레이 없이 동작하는 클램쉘" 토글. 덮개 닫고도 CPU 가 계속 돌아 빌드 / CI / 원격 세션이 가방 안 출퇴근을 견딤. 토글 → 30m/1h/4h/8h/∞ → 관리자 비밀번호 (Touch ID). 자동 해제: 타이머 / AC 분리 / lid 열림 / 종료 — 타이머 만료는 비밀번호 prompt 에 막히지 않음. 자세한 건 [Closed-lid mode](#closed-lid-mode-detailed) 섹션.
-- **AI 주간 한도 · 세션별 토큰** — 메뉴바에 Claude · Codex 주간 남은 한도(`56|57`), 메뉴에서 이번 주 AI 세션별 토큰과 그 AI 안의 점유율. **쓰는 AI 에 맞춰 보인다** — 안 쓰면 예전처럼 아이콘만, 하나만 쓰면 그 숫자 하나. 로컬 로그만 읽어 토큰을 쓰지 않는다. [AI 주간 한도](#ai-주간-한도--세션별-토큰) 섹션 참고.
+- **AI 주간 한도 · 세션별 토큰** — 메뉴바에 Claude · Codex 주간 남은 한도(`56|57`), 메뉴에서 이번 주 AI 세션별 토큰과 주간 한도 중 그 세션이 쓴 몫. **쓰는 AI 에 맞춰 보인다** — 안 쓰면 예전처럼 아이콘만, 하나만 쓰면 그 숫자 하나. 로컬 로그만 읽어 토큰을 쓰지 않는다. [AI 주간 한도](#ai-주간-한도--세션별-토큰) 섹션 참고.
 - **다국어 지원** — English + 한국어. Settings → 언어 에서 전환 (자동 / English / 한국어).
 - **템플릿 / 스크립트 런처** — 빌트인 + 사용자 YAML 템플릿. 장시간 실행되는 스크립트(OCI 인스턴스 생성, 클라우드 용량 polling, 백업, 배치 잡)를 메뉴바 토글처럼 한 클릭으로 띄우고 detach/re-attach — 스크립트는 계속 돈다. [장시간 실행 스크립트 런처](#long-running-script-launcher) 섹션 참고.
 - **전역 단축키** — `⌘⇧A` Keep Awake 토글, `⌘⇧1` ~ `⌘⇧9` 로 상단 N번째 세션 attach
@@ -53,6 +53,11 @@
   ├──────────────────────────────┤
   │ 🔒  Closed-lid mode     OFF  │   ← lid 닫고도 sleep 차단
   ├──────────────────────────────┤
+  │ AI 주간 한도                  │   ← 쓰는 AI 가 없으면 통째로 숨음
+  │ Claude             남은 56%  │
+  │ Codex              남은 57%  │
+  │ ▤  이번 주 세션별 토큰    ▸    │   ← AI 별 세션 토큰 펼침 메뉴
+  ├──────────────────────────────┤
   │ ⊞  New Session          ▸    │   ← 템플릿 서브메뉴
   ├──────────────────────────────┤
   │ ⚙  Settings             ▸    │   ← Open at Login 등
@@ -68,9 +73,26 @@
 
 ## AI 주간 한도 · 세션별 토큰
 
+<p align="center">
+  <img src="docs/assets/screenshots/menubar.png" alt="메뉴바의 주간 남은 한도 56|57" width="234"><br>
+  <sub>메뉴바 — 커피잔 · 세션 수 · Claude 와 Codex 의 주간 남은 한도</sub>
+</p>
+
 - 메뉴바 아이콘 옆에 Claude · Codex 의 **주간 남은 한도(%)** 를 `56|57` 처럼 띄운다. 어느 것을 어떤 순서로 띄울지(최대 2개)는 Settings 에서 고른다.
 - **쓰는 AI 만 보인다.** 최근 7일 안에 한도가 관측된 AI 만 "사용 중"으로 본다 — 하나도 없으면 메뉴바·메뉴 모두 예전 모습 그대로(숫자·AI 섹션 없음), 하나만 쓰면 그 숫자 하나만. Claude Code 는 쓰는데 아래 statusline 설정이 없으면 메뉴에 설정 안내만 뜬다.
-- 메뉴의 **이번 주 세션별 토큰** 은 이번 주간 창(리셋 시각 − 7일) 동안 쓴 토큰을 AI 세션 하나 단위로, 많이 쓴 순서대로 보여 준다. 하위 에이전트 사용량은 부모 세션에 합친다.
+- 메뉴의 **AI 주간 한도** 구역은 AI 마다 남은 %, 리셋 시각, 마지막 관측 시각을 보여 준다. 남은 한도가 40% 이하면 주황, 15% 이하면 빨강.
+- **이번 주 세션별 토큰** 은 Settings · New Session 처럼 옆으로 펼치는 메뉴다. 이번 주간 창(리셋 시각 − 7일) 동안 쓴 토큰을 AI 세션 하나 단위로, 많이 쓴 순서대로 보여 준다. 하위 에이전트 사용량은 부모 세션에 합친다.
+  - AI 마다 구역이 나뉘고, 구역 제목에 그 AI 의 주간 한도 사용률 · 토큰 합계 · 세션 수가 붙는다.
+  - 각 줄의 %는 **주간 한도 100% 중 그 세션이 쓴 몫**이라 구역 안 합이 구역 제목의 사용률이 된다. 토큰 비율로 나눈 근사치라 토큰 종류별 차감 차이는 반영하지 못한다. 한도를 모르는 AI 는 구역 안 토큰 비율로 보여 준다.
+  - 구역마다 10줄까지 보이고 나머지는 「외 N개」로 묶는다. 줄을 누르면 세션 id 가 복사된다 — `claude --resume <id>` 에 바로 붙여 넣는 용도.
+
+  ```text
+  Claude · 주간 한도 44.0% 사용 · 36.9M · 세션 4개
+    25.5%   21.4M   Retry queue for failed payments · shop-api
+    11.7%    9.8M   Checkout page skeleton loading · web
+  Codex · 주간 한도 43.0% 사용 · 53.7M · 세션 3개
+    30.4%   38.0M   Refactor inventory reservation · shop-api
+  ```
 - 읽는 곳 — Codex: `~/.codex/sessions/**/rollout-*.jsonl`, `~/.codex/session_index.jsonl`. Claude: `~/.claude/projects/**.jsonl` 과 아래 statusline 이 남기는 `~/.claude/rate-limits.json`.
 - Claude 주간 한도는 Claude Code 의 statusline 입력에만 있어서, statusline 스크립트에 아래 한 줄을 넣어야 보인다. Claude Code 가 화면을 그릴 때만 갱신되므로 메뉴에 관측 시각을 함께 표시한다.
 
@@ -239,17 +261,18 @@ cd muxbar
 4. quarantine 속성 제거 → Gatekeeper 경고 없이 첫 실행 가능
 5. `.build/` 에서 조립한 번들을 `/Applications/muxbar.app` 으로 옮긴다 — 레포에 사본을 남기지 않아 앱이 하나만 보인다
 
-### 2. Homebrew cask *(배포 후 제공 예정)*
-
-첫 릴리스가 나오면 아래 명령으로:
+### 2. Homebrew cask
 
 ```bash
 brew install --cask 1989v/tap/muxbar
+brew upgrade --cask muxbar     # 새 버전으로 갱신 — /Applications 의 앱을 교체한다
 ```
 
-### 3. 미리 빌드된 `.dmg` *(배포 후 제공 예정)*
+소스 빌드(`./build.sh`)와 함께 쓰지 않는다. `build.sh` 는 cask 기록이 있으면 지우는데, 남겨 두면 `brew upgrade` 가 로컬 빌드를 릴리스 버전으로 덮기 때문이다.
 
-각 [GitHub Release](https://github.com/1989v/muxbar/releases) 에 ad-hoc 서명된 `.dmg` 를 첨부할 계획. 첫 실행 시 우클릭 → 열기 로 Gatekeeper 통과 (notarize 는 안 됨).
+### 3. 미리 빌드된 `.dmg`
+
+각 [GitHub Release](https://github.com/1989v/muxbar/releases) 에 ad-hoc 서명된 `.dmg` 가 있다. `/Applications` 로 끌어 넣으면 옛 버전을 교체한다. 첫 실행 시 우클릭 → 열기 로 Gatekeeper 통과 (notarize 는 안 됨).
 
 ## 개발
 
