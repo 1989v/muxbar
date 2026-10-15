@@ -19,17 +19,18 @@ public final class AwakeStore: ObservableObject {
         self.flags = new
     }
 
-    /// caffeinate 활성 여부 — tmux 세션(muxbar 관리 + 외부) OR 시스템 프로세스.
+    /// caffeinate 활성 여부 — muxbar 세션 OR 외부 tmux 세션 OR tmux 밖 프로세스.
+    /// Closed-lid 의 caffeinate 는 세지 않는다.
     public func isAwake(in store: SessionStore) -> Bool {
-        store.caffeinateStatus.isActive
+        store.awakeSessionExists || store.caffeinateStatus.isActive
     }
 
     /// caffeinate 소스 표시용: "muxbar", "external", "none"
     public func source(in store: SessionStore) -> Source {
         let status = store.caffeinateStatus
-        guard status.isActive else { return .none }
-        let hasMuxbar = status.tmuxSessions.contains(Self.awakeSessionName)
-        let hasExternal = status.tmuxSessions.contains { $0 != Self.awakeSessionName && $0 != ClosedLidStore.sessionName } || status.systemActive
+        guard isAwake(in: store) else { return .none }
+        let hasMuxbar = store.awakeSessionExists || status.tmuxSessions.contains(Self.awakeSessionName)
+        let hasExternal = status.keepAwakeSessions.contains { $0 != Self.awakeSessionName } || status.systemActive
         if hasMuxbar && hasExternal { return .both }
         if hasMuxbar { return .muxbar }
         return .external
@@ -52,7 +53,7 @@ public final class AwakeStore: ObservableObject {
     }
 
     /// 토글 수행.
-    /// - ON → OFF: **모든 caffeinate tmux 세션 + 시스템 프로세스** 종료
+    /// - ON → OFF: **caffeinate tmux 세션(Closed-lid 제외) + tmux 밖 caffeinate** 종료
     /// - OFF → ON: `_muxbar-awake` 세션 생성
     public func toggle(in store: SessionStore, via provider: any SessionProvider) async {
         isToggling = true
@@ -60,17 +61,17 @@ public final class AwakeStore: ObservableObject {
 
         let status = store.caffeinateStatus
 
-        if status.isActive {
-            for sessionName in status.tmuxSessions where sessionName != ClosedLidStore.sessionName {
+        if isAwake(in: store) {
+            var targets = Set(status.keepAwakeSessions)
+            if store.awakeSessionExists { targets.insert(Self.awakeSessionName) }
+            for sessionName in targets.sorted() {
                 do {
                     try await provider.kill(sessionName: sessionName)
                 } catch {
                     logger.warning("kill '\(sessionName)' failed: \(error.localizedDescription)")
                 }
             }
-            if status.systemActive {
-                SystemCaffeinateDetector.pkillAll()
-            }
+            SystemCaffeinateDetector.terminate(status.externalPids)
         } else {
             let cmd = "caffeinate \(flags.cliArgs)"
             await store.createSession(name: Self.awakeSessionName, command: cmd, via: provider)

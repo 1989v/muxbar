@@ -35,6 +35,10 @@ public final class SessionStore: ObservableObject {
         self.sessions = sessions
     }
 
+    public func apply(caffeinateStatus: CaffeinateStatus) {
+        self.caffeinateStatus = caffeinateStatus
+    }
+
     public func apply(connectionState: ConnectionState) {
         self.connectionState = connectionState
     }
@@ -98,8 +102,8 @@ public final class SessionStore: ObservableObject {
         do {
             let tmuxList = try await provider.listCaffeinateSessions()
             // 외부 명령이라 메인 스레드 밖에서 — 응답이 늦어도 메뉴바는 굳지 않는다.
-            let systemActive = await Task.detached { SystemCaffeinateDetector.isActive() }.value
-            self.caffeinateStatus = CaffeinateStatus(tmuxSessions: tmuxList, systemActive: systemActive)
+            let externalPids = await Task.detached { SystemCaffeinateDetector.externalPids() }.value
+            self.caffeinateStatus = CaffeinateStatus(tmuxSessions: tmuxList, externalPids: externalPids)
         } catch {
             logger.warning("caffeinate detection failed: \(error.localizedDescription)")
         }
@@ -154,32 +158,65 @@ public struct PaneOutputChunk: Sendable, Equatable {
 public struct CaffeinateStatus: Sendable, Equatable {
     /// caffeinate 가 실행 중인 tmux 세션 이름들 (muxbar 관리 + 외부 모두 포함)
     public let tmuxSessions: [String]
-    /// tmux 외부에서 caffeinate 프로세스가 돌고 있는지 (pmset -g assertions 기반)
-    public let systemActive: Bool
+    /// tmux 밖에서 잠자기를 막고 있는 caffeinate 의 pid (pmset -g assertions 기반)
+    public let externalPids: [Int32]
 
-    public init(tmuxSessions: [String] = [], systemActive: Bool = false) {
+    public init(tmuxSessions: [String] = [], externalPids: [Int32] = []) {
         self.tmuxSessions = tmuxSessions
-        self.systemActive = systemActive
+        self.externalPids = externalPids
     }
 
-    public var isActive: Bool { !tmuxSessions.isEmpty || systemActive }
+    public var systemActive: Bool { !externalPids.isEmpty }
 
-    /// tmux 외부에서만 caffeinate 가 돌고 있을 때 true (kill 대상이 tmux 에 없음 → pkill 필요)
-    public var hasExternalOnly: Bool { tmuxSessions.isEmpty && systemActive }
+    /// Keep Awake 가 보고 끄는 tmux 세션. Closed-lid 의 caffeinate 는 그 모드가 켜고 끄므로 뺀다.
+    public var keepAwakeSessions: [String] {
+        tmuxSessions.filter { $0 != ClosedLidStore.sessionName }
+    }
+
+    /// Keep Awake 기준 활성 여부 — Closed-lid 만 켜져 있으면 false.
+    public var isActive: Bool { !keepAwakeSessions.isEmpty || systemActive }
 }
 
-/// 시스템 전역 caffeinate 프로세스 존재 여부 검사.
+/// tmux 밖에서 도는 caffeinate 검출·종료.
 public enum SystemCaffeinateDetector {
-    public static func isActive() -> Bool {
-        guard let result = try? ProcessRunner.run("/usr/bin/pmset", ["-g", "assertions"], timeout: 5),
-              !result.timedOut else { return false }
-        let output = result.stdoutText
-        // pmset 은 assertion 보유 프로세스명을 "pid N(caffeinate): ..." 형태로 출력
-        return output.range(of: "caffeinate", options: .caseInsensitive) != nil
+    /// 잠자기를 막고 있는 caffeinate 중 부모가 tmux 가 아닌 것의 pid.
+    /// tmux 안의 것은 세션 단위로 다루므로 여기서 빼고, 특히 Closed-lid 세션의 caffeinate 를
+    /// 바깥 것으로 잘못 세어 끄지 않게 한다. 부모를 확인하지 못하면 아무것도 바깥으로 치지 않는다.
+    public static func externalPids() -> [Int32] {
+        guard let assertions = try? ProcessRunner.run("/usr/bin/pmset", ["-g", "assertions"], timeout: 5),
+              !assertions.timedOut else { return [] }
+        let pids = caffeinatePids(fromAssertions: assertions.stdoutText)
+        guard !pids.isEmpty else { return [] }
+        guard let ps = try? ProcessRunner.run("/bin/ps", ["-axo", "pid=,ppid=,comm="], timeout: 5),
+              ps.succeeded else { return [] }
+        return excludingTmuxChildren(pids, psOutput: ps.stdoutText)
     }
 
-    /// tmux 밖에서 돌고 있는 caffeinate 프로세스 전부 종료.
-    public static func pkillAll() {
-        _ = try? ProcessRunner.run("/usr/bin/pkill", ["-x", "caffeinate"], timeout: 5)
+    /// pmset 은 assertion 보유 프로세스를 "pid N(caffeinate): ..." 형태로 출력한다.
+    static func caffeinatePids(fromAssertions text: String) -> [Int32] {
+        let pattern = #/pid (\d+)\(caffeinate\)/#
+        let pids = text.matches(of: pattern).compactMap { Int32($0.output.1) }
+        return Array(Set(pids)).sorted()
+    }
+
+    /// `ps -axo pid=,ppid=,comm=` 출력으로 부모가 tmux 인 pid 를 뺀다.
+    static func excludingTmuxChildren(_ pids: [Int32], psOutput: String) -> [Int32] {
+        var parent: [Int32: Int32] = [:]
+        var command: [Int32: String] = [:]
+        for line in psOutput.split(separator: "\n") {
+            let fields = line.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
+            guard fields.count == 3, let pid = Int32(fields[0]), let ppid = Int32(fields[1]) else { continue }
+            parent[pid] = ppid
+            command[pid] = String(fields[2])
+        }
+        return pids.filter { pid in
+            guard let ppid = parent[pid] else { return false }  // 이미 끝난 프로세스
+            let parentName = (command[ppid] ?? "").split(separator: "/").last.map(String.init) ?? ""
+            return !parentName.hasPrefix("tmux")
+        }
+    }
+
+    public static func terminate(_ pids: [Int32]) {
+        for pid in pids { kill(pid, SIGTERM) }
     }
 }

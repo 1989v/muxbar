@@ -3,7 +3,7 @@ import MuxLogging
 
 @MainActor
 public final class ClosedLidStore: ObservableObject {
-    public static let sessionName = "_muxbar-closed-lid"
+    public nonisolated static let sessionName = "_muxbar-closed-lid"
 
     public enum State: Equatable {
         case off

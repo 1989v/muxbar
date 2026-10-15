@@ -56,7 +56,7 @@ public struct KeepAwakeMenuItem: View {
     }
 
     private var externalSessionList: String {
-        sessionStore.caffeinateStatus.tmuxSessions
+        sessionStore.caffeinateStatus.keepAwakeSessions
             .filter { $0 != AwakeStore.awakeSessionName }
             .joined(separator: ", ")
     }
