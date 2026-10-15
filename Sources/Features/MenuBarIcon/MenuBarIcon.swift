@@ -24,43 +24,39 @@ public struct MenuBarIcon: View {
     }
 
     public var body: some View {
-        HStack(spacing: 4) {
-            modeIcon
-            // 주간 남은 한도 — 고른 AI 순서대로 "56|57"
-            if let text = usageStore.menuBarText(for: usagePreferences.menuBarProviders) {
-                Text(text)
-                    .font(.system(size: 11, weight: .medium))
+        HStack(spacing: 3) {
+            // 주간 남은 한도 — 고른 AI 순서대로 "56|57" 을 아이콘 위에 겹친다
+            if let base = modeImage {
+                if let text = usageStore.menuBarText(for: usagePreferences.menuBarProviders) {
+                    Image(nsImage: LimitOverlay.image(base: base, text: text,
+                                                      color: modeColor, isTemplate: base.isTemplate))
+                } else {
+                    Image(nsImage: base)
+                }
+            } else {
+                // fallback
+                Image(systemName: closedLidStore.state.isOn ? "lock.fill"
+                      : isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
+            }
+            if !closedLidStore.state.isOn, sessionCount > 0 {
+                Text("\(sessionCount)")
+                    .font(.system(size: 12, weight: .semibold))
                     .monospacedDigit()
             }
         }
     }
 
-    @ViewBuilder
-    private var modeIcon: some View {
-        if closedLidStore.state.isOn {
-            // closed-lid ON: 빨간 lock 우선 (Keep Awake ON 여부와 무관)
-            // SwiftUI .foregroundColor(.red) 는 NSStatusItem 컨텍스트에서 system tint 로 override 됨.
-            // awake 오렌지와 동일하게 NSImage + paletteColors + isTemplate=false 경로 사용.
-            if let img = paletteSymbol("lock.fill", color: .systemRed) {
-                Image(nsImage: img)
-            } else {
-                Image(systemName: "lock.fill")  // fallback
-            }
-        } else {
-            HStack(spacing: 3) {
-                if let nsImage = coloredSymbol() {
-                    Image(nsImage: nsImage)
-                } else {
-                    // fallback
-                    Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
-                }
-                if sessionCount > 0 {
-                    Text("\(sessionCount)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .monospacedDigit()
-                }
-            }
-        }
+    /// closed-lid ON 이면 빨간 lock 우선 (Keep Awake ON 여부와 무관), 아니면 커피잔.
+    /// SwiftUI .foregroundColor(.red) 는 NSStatusItem 컨텍스트에서 system tint 로 override 됨.
+    /// awake 오렌지와 동일하게 NSImage + paletteColors + isTemplate=false 경로 사용.
+    private var modeImage: NSImage? {
+        closedLidStore.state.isOn ? paletteSymbol("lock.fill", color: .systemRed) : coloredSymbol()
+    }
+
+    /// 한도 판의 색 — 아이콘과 같게. 템플릿(비활성 커피잔)이면 시스템이 다시 칠한다.
+    private var modeColor: NSColor {
+        if closedLidStore.state.isOn { return .systemRed }
+        return isAwake ? .systemOrange : .black
     }
 
     /// macOS 메뉴바는 기본적으로 template image (모노크롬) 로 렌더함.

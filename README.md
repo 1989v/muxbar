@@ -31,9 +31,10 @@
 ## Menu bar icon
 
 - 0 sessions: plain coffee cup
-- Active sessions: cup + session count badge
+- Active sessions: session count next to the cup
 - Keep Awake active: steaming cup, orange tint
 - Closed-lid mode active: red lock icon (priority over Keep Awake)
+- With AI in use: weekly limit left drawn over the icon (`56|57`)
 
 ## Menu layout
 
@@ -74,11 +75,11 @@
 ## AI weekly limits · tokens by session
 
 <p align="center">
-  <img src="docs/assets/screenshots/menubar.png" alt="weekly limit left in the menu bar, 56|57" width="234"><br>
-  <sub>Menu bar — cup · session count · weekly limit left for Claude and Codex</sub>
+  <img src="docs/assets/screenshots/menubar.png" alt="weekly limit left in the menu bar, 56|57" width="212"><br>
+  <sub>Menu bar — Claude · Codex weekly limit left drawn over the cup, with the session count</sub>
 </p>
 
-- Shows the **weekly limit left (%)** for Claude and Codex next to the menu bar icon, e.g. `56|57`. Pick which ones and in what order (up to 2) in Settings.
+- Draws the **weekly limit left (%)** for Claude and Codex over the menu bar icon, e.g. `56|57`, so the icon stays one cup wide. Pick which ones and in what order (up to 2) in Settings.
 - **Only the AIs you use show up.** An AI counts as in use when its limit was seen within the last 7 days — with none, the menu bar and menu look exactly as before (no number, no AI section); with one, just that number. If you use Claude Code without the statusline setup below, the menu shows only a setup hint.
 - The **AI weekly limits** block in the menu shows % left, reset time and when it was last seen for each AI. It turns orange at 40% left or less, red at 15% or less.
 - **This week's tokens by session** is a submenu that opens sideways like Settings and New Session. It lists tokens used in the current weekly window (reset time − 7 days) per AI session, largest first. Subagent usage is added to its parent session.
