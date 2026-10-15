@@ -31,7 +31,7 @@
 ## Menu bar icon
 
 - 0 sessions: plain coffee cup
-- Active sessions: session count next to the cup
+- Active sessions: session count in a small circle at the cup's top right (not on the closed-lid lock)
 - Keep Awake active: steaming cup, orange tint
 - Closed-lid mode active: red lock icon (priority over Keep Awake)
 - With AI in use: weekly limit left drawn over the icon (`56|57`)
@@ -75,8 +75,8 @@
 ## AI weekly limits · tokens by session
 
 <p align="center">
-  <img src="docs/assets/screenshots/menubar.png" alt="weekly limit left in the menu bar, 56|57" width="212"><br>
-  <sub>Menu bar — Claude · Codex weekly limit left drawn over the cup, with the session count</sub>
+  <img src="docs/assets/screenshots/menubar.png" alt="weekly limit left in the menu bar, 56|57" width="200"><br>
+  <sub>Menu bar — Claude · Codex weekly limit left drawn over the cup; the circle at top right is the session count</sub>
 </p>
 
 - Draws the **weekly limit left (%)** for Claude and Codex over the menu bar icon, e.g. `56|57`, so the icon stays one cup wide. Pick which ones and in what order (up to 2) in Settings.

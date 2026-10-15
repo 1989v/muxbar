@@ -24,25 +24,20 @@ public struct MenuBarIcon: View {
     }
 
     public var body: some View {
-        HStack(spacing: 3) {
-            // 주간 남은 한도 — 고른 AI 순서대로 "56|57" 을 아이콘 위에 겹친다
-            if let base = modeImage {
-                if let text = usageStore.menuBarText(for: usagePreferences.menuBarProviders) {
-                    Image(nsImage: LimitOverlay.image(base: base, text: text,
-                                                      color: modeColor, isTemplate: base.isTemplate))
-                } else {
-                    Image(nsImage: base)
-                }
-            } else {
-                // fallback
-                Image(systemName: closedLidStore.state.isOn ? "lock.fill"
-                      : isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
-            }
-            if !closedLidStore.state.isOn, sessionCount > 0 {
-                Text("\(sessionCount)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .monospacedDigit()
-            }
+        // 아이콘 몸통 위에 주간 남은 한도("56|57"), 오른쪽 위 원 안에 세션 수.
+        // closed-lid 자물쇠에는 세션 수를 달지 않는다.
+        if let base = modeImage {
+            Image(nsImage: LimitOverlay.image(
+                base: base,
+                limitText: usageStore.menuBarText(for: usagePreferences.menuBarProviders),
+                sessionCount: closedLidStore.state.isOn ? 0 : sessionCount,
+                color: modeColor,
+                isTemplate: base.isTemplate
+            ))
+        } else {
+            // fallback
+            Image(systemName: closedLidStore.state.isOn ? "lock.fill"
+                  : isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
         }
     }
 

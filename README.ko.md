@@ -31,7 +31,7 @@
 ## 메뉴바 아이콘
 
 - 세션 0개: 빈 커피잔
-- 활성 세션: 커피잔 옆에 세션 수
+- 활성 세션: 커피잔 오른쪽 위 작은 원 안에 세션 수 (Closed-lid 자물쇠에는 달지 않는다)
 - Keep Awake 활성: 김 나오는 커피잔 + 오렌지 톤
 - Closed-lid mode 활성: 빨간 lock 아이콘 (Keep Awake 보다 우선)
 - AI 를 쓰면: 아이콘 위에 주간 남은 한도가 겹쳐 보인다 (`56|57`)
@@ -75,8 +75,8 @@
 ## AI 주간 한도 · 세션별 토큰
 
 <p align="center">
-  <img src="docs/assets/screenshots/menubar.png" alt="메뉴바의 주간 남은 한도 56|57" width="212"><br>
-  <sub>메뉴바 — 커피잔에 겹친 Claude · Codex 주간 남은 한도와 세션 수</sub>
+  <img src="docs/assets/screenshots/menubar.png" alt="메뉴바의 주간 남은 한도 56|57" width="200"><br>
+  <sub>메뉴바 — 커피잔에 겹친 Claude · Codex 주간 남은 한도, 오른쪽 위 원은 세션 수</sub>
 </p>
 
 - 메뉴바 아이콘 위에 Claude · Codex 의 **주간 남은 한도(%)** 를 `56|57` 처럼 겹쳐 띄운다. 옆에 이어 붙이지 않아 메뉴바 폭이 아이콘 하나 그대로다. 어느 것을 어떤 순서로 띄울지(최대 2개)는 Settings 에서 고른다.
