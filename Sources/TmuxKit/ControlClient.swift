@@ -74,29 +74,21 @@ public actor ControlClient {
 
     private func ensureServerRunning() throws {
         // 서버 없으면 detached 관리 세션으로 서버 기동
-        let check = Process()
-        check.executableURL = URL(fileURLWithPath: tmuxPath)
-        check.arguments = ["has-session", "-t", "_muxbar-ctl"]
-        check.standardError = Pipe()
-        check.standardOutput = Pipe()
+        let check: ProcessRunner.Result
         do {
-            try check.run()
-            check.waitUntilExit()
+            check = try ProcessRunner.run(tmuxPath, ["has-session", "-t", "_muxbar-ctl"], timeout: 10)
         } catch {
             throw ClientError.processFailedToStart("tmux has-session 실패: \(error.localizedDescription)")
         }
+        guard !check.timedOut else {
+            throw ClientError.processFailedToStart("tmux has-session 시간 초과")
+        }
 
-        if check.terminationStatus != 0 {
+        if check.status != 0 {
             // _muxbar-ctl 없음 → 생성 (서버도 같이 뜸)
-            let make = Process()
-            make.executableURL = URL(fileURLWithPath: tmuxPath)
-            make.arguments = ["new-session", "-d", "-s", "_muxbar-ctl"]
-            make.standardError = Pipe()
-            make.standardOutput = Pipe()
-            try make.run()
-            make.waitUntilExit()
-            guard make.terminationStatus == 0 else {
-                throw ClientError.processFailedToStart("tmux new-session _muxbar-ctl 실패 (exit=\(make.terminationStatus))")
+            let make = try ProcessRunner.run(tmuxPath, ["new-session", "-d", "-s", "_muxbar-ctl"], timeout: 10)
+            guard make.succeeded else {
+                throw ClientError.processFailedToStart("tmux new-session _muxbar-ctl 실패 (exit=\(make.status), timedOut=\(make.timedOut))")
             }
         }
     }

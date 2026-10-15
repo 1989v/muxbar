@@ -97,7 +97,8 @@ public final class SessionStore: ObservableObject {
     public func refreshCaffeinate(from provider: any SessionProvider) async {
         do {
             let tmuxList = try await provider.listCaffeinateSessions()
-            let systemActive = SystemCaffeinateDetector.isActive()
+            // 외부 명령이라 메인 스레드 밖에서 — 응답이 늦어도 메뉴바는 굳지 않는다.
+            let systemActive = await Task.detached { SystemCaffeinateDetector.isActive() }.value
             self.caffeinateStatus = CaffeinateStatus(tmuxSessions: tmuxList, systemActive: systemActive)
         } catch {
             logger.warning("caffeinate detection failed: \(error.localizedDescription)")
@@ -170,32 +171,15 @@ public struct CaffeinateStatus: Sendable, Equatable {
 /// 시스템 전역 caffeinate 프로세스 존재 여부 검사.
 public enum SystemCaffeinateDetector {
     public static func isActive() -> Bool {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        p.arguments = ["-g", "assertions"]
-        let pipe = Pipe()
-        p.standardOutput = pipe
-        p.standardError = Pipe()
-        do {
-            try p.run()
-            p.waitUntilExit()
-        } catch {
-            return false
-        }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8) ?? ""
+        guard let result = try? ProcessRunner.run("/usr/bin/pmset", ["-g", "assertions"], timeout: 5),
+              !result.timedOut else { return false }
+        let output = result.stdoutText
         // pmset 은 assertion 보유 프로세스명을 "pid N(caffeinate): ..." 형태로 출력
         return output.range(of: "caffeinate", options: .caseInsensitive) != nil
     }
 
     /// tmux 밖에서 돌고 있는 caffeinate 프로세스 전부 종료.
     public static func pkillAll() {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        p.arguments = ["-x", "caffeinate"]
-        p.standardOutput = Pipe()
-        p.standardError = Pipe()
-        try? p.run()
-        p.waitUntilExit()
+        _ = try? ProcessRunner.run("/usr/bin/pkill", ["-x", "caffeinate"], timeout: 5)
     }
 }

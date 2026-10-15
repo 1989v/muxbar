@@ -38,45 +38,23 @@ public enum PowerControl {
     /// 룰 미설정/만료/cache miss 면 sudo 가 non-zero 종료 → false 반환 → AppleScript fallback.
     @MainActor
     private static func runSudoNoPrompt(disable: Bool) -> Bool {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-        p.arguments = ["-n", "/usr/bin/pmset", "-a", "disablesleep", disable ? "1" : "0"]
-        p.standardError = Pipe()
-        p.standardOutput = Pipe()
-        do {
-            try p.run()
-            p.waitUntilExit()
-            return p.terminationStatus == 0
-        } catch {
-            return false
-        }
+        let args = ["-n", "/usr/bin/pmset", "-a", "disablesleep", disable ? "1" : "0"]
+        return (try? ProcessRunner.run("/usr/bin/sudo", args, timeout: 10))?.succeeded ?? false
     }
 
     /// `pmset -g` 의 `SleepDisabled` 값을 읽어 현재 시스템 슬립이 꺼져있는지 반환.
     /// 읽기 전용이라 sudo/비밀번호 불필요 — launch reconcile 에서 불필요한 password prompt 를
     /// 피하기 위한 게이트로 사용.
     static func isSystemSleepDisabled() -> Bool {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        p.arguments = ["-g"]
-        let out = Pipe()
-        p.standardOutput = out
-        p.standardError = Pipe()
-        do {
-            try p.run()
-            let data = out.fileHandleForReading.readDataToEndOfFile()
-            p.waitUntilExit()
-            guard let text = String(data: data, encoding: .utf8) else { return false }
-            // 예: " SleepDisabled\t\t1"
-            for line in text.split(separator: "\n") {
-                let fields = line.split(whereSeparator: \.isWhitespace)
-                guard fields.first == "SleepDisabled", let value = fields.last else { continue }
-                return value == "1"
-            }
-            return false
-        } catch {
-            return false
+        guard let result = try? ProcessRunner.run("/usr/bin/pmset", ["-g"], timeout: 5),
+              !result.timedOut else { return false }
+        // 예: " SleepDisabled\t\t1"
+        for line in result.stdoutText.split(separator: "\n") {
+            let fields = line.split(whereSeparator: \.isWhitespace)
+            guard fields.first == "SleepDisabled", let value = fields.last else { continue }
+            return value == "1"
         }
+        return false
     }
 
     @MainActor
