@@ -11,6 +11,7 @@
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
 <p align="center">
+  <img src="docs/assets/screenshots/menubar.png" alt="메뉴바의 muxbar — 잔 위 AI 주간 남은 한도, 원 안 세션 수" width="200"><br>
   <img src="docs/assets/screenshots/menu.ko.png" alt="muxbar 메뉴바 드롭다운" width="344">
 </p>
 

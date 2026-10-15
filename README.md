@@ -11,6 +11,7 @@
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 
 <p align="center">
+  <img src="docs/assets/screenshots/menubar.png" alt="muxbar in the menu bar — weekly AI limit left over the cup, session count in the circle" width="200"><br>
   <img src="docs/assets/screenshots/menu.png" alt="muxbar menu bar dropdown" width="344">
 </p>
 
