@@ -69,6 +69,8 @@ echo "[3/5] Ad-hoc codesign"
 codesign --deep --force --sign - "$OUT_DIR/$APP_NAME"
 
 echo "[4/5] create-dmg"
+# 이전 버전 dmg 는 GitHub Release 에 있으니 로컬에는 이번 것 하나만 둔다.
+find "$OUT_DIR" -maxdepth 1 -name 'muxbar-*.dmg' ! -name "muxbar-$VERSION.dmg" -print -delete
 if ! command -v create-dmg >/dev/null 2>&1; then
     echo "create-dmg 없음. brew install create-dmg"
     exit 1

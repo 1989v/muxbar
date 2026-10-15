@@ -127,6 +127,15 @@ if pgrep -f "^$APP_BIN" >/dev/null; then
         pgrep -f "^$APP_BIN" >/dev/null || break
         sleep 0.5
     done
+    # 메인 스레드가 멈춘 앱은 종료 요청에 답하지 못한다 — 그래도 교체는 끝까지 간다.
+    # closed-lid 가 켜진 채 끊겨도 다음 실행의 reconcile 이 pmset 을 되돌린다.
+    if pgrep -f "^$APP_BIN" >/dev/null; then
+        echo "  ! 종료 요청에 응답 없음 — 강제 종료"
+        pkill -TERM -f "^$APP_BIN" || true
+        sleep 2
+        pkill -KILL -f "^$APP_BIN" 2>/dev/null || true
+        sleep 0.5
+    fi
     if pgrep -f "^$APP_BIN" >/dev/null; then
         echo "  ✗ 실행 중인 muxbar 가 종료되지 않음 — 직접 종료 후 다시 실행" && exit 1
     fi
@@ -139,6 +148,15 @@ mv "$APP_PATH" "$INSTALL_PATH"
 if [ -d "$REPO_ROOT/$APP_NAME" ]; then
     "$LSREGISTER" -u "$REPO_ROOT/$APP_NAME" >/dev/null 2>&1 || true
     rm -rf "$REPO_ROOT/$APP_NAME"
+fi
+
+# Homebrew cask 로 설치했던 기록 정리. 앱 자체는 위에서 교체한 /Applications 하나뿐이고
+# Caskroom 에는 그 링크만 남는데, 기록이 있으면 `brew upgrade` 가 이 빌드를 옛 릴리스로 덮는다.
+# `brew uninstall` 은 /Applications 의 새 앱까지 지우므로 기록만 지운다.
+CASKROOM="$(brew --prefix 2>/dev/null || echo /opt/homebrew)/Caskroom/muxbar"
+if [ -d "$CASKROOM" ]; then
+    rm -rf "$CASKROOM"
+    echo "  ✓ Homebrew cask 기록 정리 (로컬 빌드가 대신함)"
 fi
 echo "  ✓ $INSTALL_PATH ($VERSION)"
 
