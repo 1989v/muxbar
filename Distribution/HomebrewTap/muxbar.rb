@@ -1,6 +1,6 @@
 cask "muxbar" do
-  version "0.4.1"
-  sha256 "2f742affa7b7524d813f2b034aca9c920d918d0395ea72c08e43eafefd6e7ff3"
+  version "0.4.2"
+  sha256 "af4c3f611b9aaf66d41679083f81bb956f5fea9bb74bdee4b1e7714fec8d2a72"
 
   url "https://github.com/1989v/muxbar/releases/download/v#{version}/muxbar-#{version}.dmg"
   name "muxbar"
